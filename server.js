@@ -492,8 +492,14 @@ function getCookie(request, name) {
     ?.slice(name.length + 1) || null;
 }
 
+function isSecureRequest(request) {
+  if (request.socket.encrypted) return true;
+  if (process.env.TRUST_PROXY !== "true") return false;
+  return (request.headers["x-forwarded-proto"] || "").split(",")[0].trim().toLowerCase() === "https";
+}
+
 function setBrowserCookie(request, response, browserId) {
-  const secure = request.socket.encrypted ? "; Secure" : "";
+  const secure = isSecureRequest(request) ? "; Secure" : "";
   response.setHeader(
     "set-cookie",
     `${BROWSER_COOKIE}=${browserId}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000${secure}`
@@ -501,12 +507,12 @@ function setBrowserCookie(request, response, browserId) {
 }
 
 function setSessionCookie(request, response, token, maxAge = SESSION_TTL_MS / 1000) {
-  const secure = request.socket.encrypted ? "; Secure" : "";
+  const secure = isSecureRequest(request) ? "; Secure" : "";
   response.setHeader("set-cookie", `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secure}`);
 }
 
 function clearSessionCookie(request, response) {
-  const secure = request.socket.encrypted ? "; Secure" : "";
+  const secure = isSecureRequest(request) ? "; Secure" : "";
   response.setHeader("set-cookie", `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secure}`);
 }
 
@@ -602,7 +608,7 @@ function sameOriginRequest(request) {
   const origin = request.headers.origin;
   if (!origin || !request.headers.host) return false;
   try {
-    const protocol = request.socket.encrypted ? "https:" : "http:";
+    const protocol = isSecureRequest(request) ? "https:" : "http:";
     return new URL(origin).origin === `${protocol}//${request.headers.host}`;
   } catch {
     return false;
@@ -813,7 +819,7 @@ function createServer({ databasePath, sendVerificationCode } = {}) {
 if (require.main === module) {
   loadEnvFile();
   const port = Number(process.env.PORT || 3000);
-  const host = process.env.HOST || "127.0.0.1";
+  const host = process.env.HOST || (process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1");
   const server = createServer();
   server.listen(port, host, () => {
     console.log(`OrbitIQ is running at http://${host}:${port}`);

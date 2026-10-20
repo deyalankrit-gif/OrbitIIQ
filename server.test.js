@@ -78,7 +78,8 @@ before(async () => {
     GEMINI_API_KEY: process.env.GEMINI_API_KEY,
     GEMINI_BASE_URL: process.env.GEMINI_BASE_URL,
     GEMINI_MODEL: process.env.GEMINI_MODEL,
-    DATABASE_PATH: process.env.DATABASE_PATH
+    DATABASE_PATH: process.env.DATABASE_PATH,
+    TRUST_PROXY: process.env.TRUST_PROXY
   };
   testDatabaseDirectory = fs.mkdtempSync(path.join(os.tmpdir(), "OrbitIQ-test-"));
   process.env.DATABASE_PATH = path.join(testDatabaseDirectory, "test.sqlite");
@@ -258,6 +259,33 @@ test("email verification creates accounts and server-managed sessions", async ()
   const loginResult = await loginResponse.json();
   assert.equal(loginResult.user.email, email);
   assert.deepEqual(loginResult.state.data, { subject: "Biology", topics: ["Cells"] });
+});
+
+test("trusted HTTPS proxy requests pass origin checks and set secure cookies", async () => {
+  const originalTrustProxy = process.env.TRUST_PROXY;
+  process.env.TRUST_PROXY = "true";
+  try {
+    const origin = new URL(appBase);
+    origin.protocol = "https:";
+    const response = await fetch(`${appBase}/api/auth/request-code`, {
+      method: "POST",
+      headers: {
+        "content-type": "application/json",
+        origin: origin.origin,
+        "x-forwarded-proto": "https"
+      },
+      body: JSON.stringify({
+        email: "proxy-test@example.test",
+        mode: "signup",
+        profile: { role: "Other", name: "Proxy test", age: 16, institution: "", level: "Other / lifelong learner" }
+      })
+    });
+    assert.equal(response.status, 200);
+    assert.match(response.headers.get("set-cookie"), /; Secure(?:;|$)/);
+  } finally {
+    if (originalTrustProxy === undefined) delete process.env.TRUST_PROXY;
+    else process.env.TRUST_PROXY = originalTrustProxy;
+  }
 });
 
 test("unknown email sign-in does not create an account", async () => {

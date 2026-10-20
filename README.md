@@ -51,6 +51,19 @@ Do not use VS Code Live Server (usually port `5500`) or the Next.js landing page
 
 AI tools require a Google Gemini API key with access and available quota for the selected model. The **AI key configured** status only confirms a key is present; the first AI request confirms provider access and usage. If Gemini reports a quota or rate limit, check the Google AI Studio project limits. `npm test` runs the backend tests without contacting an AI provider.
 
+## Deploy on Hostinger Node.js hosting
+
+The public website needs to run this Node.js app, not just publish `index.html` through static Git deployment. In Hostinger, create a Node.js app from this repository, select the repository root as the app directory, install dependencies with `npm install`, and use `npm start` as the startup command. Use Node.js 20 or newer and attach `orbitiq.online` to that Node.js app so its page and `/api/*` routes share the same domain.
+
+Set these as private environment variables in the Hostinger Node.js app settings (do not commit them or rely on the local `.env`):
+
+- `GMAIL_USER` and `GMAIL_APP_PASSWORD` for verification email.
+- `GEMINI_API_KEY` for AI tools.
+- `TRUST_PROXY=true` so HTTPS requests forwarded by Hostinger are recognized and auth cookies stay secure.
+- `DATABASE_PATH` pointing to a writable, persistent location if Hostinger provides one. The default is `data/OrbitIQ.sqlite` inside the app directory; confirm Git deployments preserve that data.
+
+Let Hostinger provide `PORT`; set `HOST=0.0.0.0` if its app settings require an explicit host. After deployment, check `https://orbitiq.online/api/health`; it should return JSON rather than a 404. If Git deployment only publishes static files, switch the domain's website target to the Node.js app.
+
 OrbitIQ uses passwordless email verification for account creation and sign-in. A six-digit code is sent to the supplied email address and expires after 10 minutes; code verification is limited to five attempts. The browser receives a 30-day HttpOnly, SameSite session cookie, and the server stores only a hash of the session token. Study data and AI endpoints require a valid session. Sign out revokes the current session and clears the browser's cached account data. Sessions are device/browser-specific; signing out does not sign out other devices.
 
 Account and study records, verification-code hashes, and sessions are stored in the local SQLite database. Back up and protect that file. Existing anonymous browser data in this database is associated with the first account created from that browser; signing in as a different account does not import or reveal that data. Gmail delivery must be configured before users can receive verification codes. For a public deployment, use HTTPS, a production email service, durable shared rate limiting, database encryption/backups, and operational monitoring; this local prototype is not hardened for internet-facing multi-user deployment.
