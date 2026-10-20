@@ -1,0 +1,16 @@
+{
+  "name": "studyorbit",
+  "version": "1.0.0",
+  "private": true,
+  "description": "StudyOrbit student learning assistant",
+  "scripts": {
+    "start": "node server.js",
+    "test": "node --test server.test.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "sql.js": "^1.15.1"
+  }
+}

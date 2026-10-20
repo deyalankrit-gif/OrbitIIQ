@@ -1,0 +1,2553 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#080d18">
+  <link rel="icon" type="image/png" href="/StudyOrbit_Favicon.png">
+  <title>StudyOrbit — Your learning space</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --bg: #080d18;
+      --panel: #101827;
+      --panel-2: #141e30;
+      --line: #202b3d;
+      --muted: #96a3b8;
+      --text: #edf3ff;
+      --blue: #5c8dff;
+      --blue-bright: #79a4ff;
+      --cyan: #5bd7ed;
+      --green: #65d6a0;
+      --amber: #f5bf68;
+      --red: #ff828b;
+      --radius: 16px;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-width: 320px;
+      min-height: 100vh;
+      background: var(--bg);
+      color: var(--text);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+    button, input, select, textarea { font: inherit; }
+    button { color: inherit; cursor: pointer; }
+    button:focus-visible, input:focus-visible, select:focus-visible, textarea:focus-visible {
+      outline: 2px solid var(--blue-bright);
+      outline-offset: 2px;
+    }
+    a { color: inherit; }
+    .hidden { display: none !important; }
+    .muted { color: var(--muted); }
+    .eyebrow { color: var(--blue-bright); font-size: 11px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase; }
+    .btn {
+      min-height: 40px;
+      padding: 9px 15px;
+      border: 1px solid transparent;
+      border-radius: 10px;
+      background: var(--blue);
+      color: white;
+      font-weight: 700;
+      transition: background .15s ease, transform .15s ease, border-color .15s ease;
+    }
+    .btn:hover { background: #4779e8; transform: translateY(-1px); }
+    .btn.secondary { border-color: #2a3850; background: #172237; color: #dce7fb; }
+    .btn.secondary:hover { background: #202d43; }
+    .btn.ghost { border-color: var(--line); background: transparent; color: #bac7dc; }
+    .btn.ghost:hover { background: var(--panel-2); }
+    .btn.small { min-height: 34px; padding: 6px 11px; font-size: 12px; }
+    .icon-button {
+      display: inline-grid;
+      width: 38px;
+      height: 38px;
+      place-items: center;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      background: var(--panel);
+      color: #c8d4e8;
+    }
+    .icon-button:hover { border-color: #3d5275; background: var(--panel-2); }
+    .field { display: grid; gap: 7px; min-width: 0; }
+    .field label { color: #c2cee0; font-size: 12px; font-weight: 650; }
+    input, select, textarea {
+      width: 100%;
+      min-height: 43px;
+      padding: 10px 12px;
+      border: 1px solid #29364b;
+      border-radius: 10px;
+      background: #0b1321;
+      color: var(--text);
+    }
+    textarea { min-height: 120px; resize: vertical; }
+    input::placeholder, textarea::placeholder { color: #718099; }
+    select { appearance: auto; }
+    .card {
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      background: var(--panel);
+    }
+    .card-pad { padding: 20px; }
+    .section-title { margin: 0; font-size: 16px; font-weight: 730; letter-spacing: -.02em; }
+    .section-head { display: flex; align-items: center; justify-content: space-between; gap: 14px; margin-bottom: 16px; }
+    .row { display: flex; align-items: center; gap: 12px; }
+    .wrap { flex-wrap: wrap; }
+    .grow { flex: 1; }
+    .stack { display: grid; gap: 14px; }
+    .grid { display: grid; gap: 16px; }
+    .tag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      width: fit-content;
+      padding: 5px 9px;
+      border: 1px solid #2a3c5d;
+      border-radius: 999px;
+      background: #17243a;
+      color: #b9d0ff;
+      font-size: 11px;
+      font-weight: 700;
+    }
+    .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+
+    /* Welcome flow */
+    .welcome-screen {
+      display: grid;
+      min-height: 100vh;
+      grid-template-columns: minmax(0, 1fr) minmax(360px, 470px);
+      gap: 7vw;
+      align-items: center;
+      padding: clamp(24px, 7vw, 100px);
+      background:
+        radial-gradient(ellipse at 16% 22%, rgba(50, 98, 194, .19), transparent 43%),
+        radial-gradient(ellipse at 68% 88%, rgba(33, 117, 161, .12), transparent 36%),
+        var(--bg);
+    }
+    .welcome-copy { max-width: 610px; }
+    .brand { display: inline-flex; align-items: center; gap: 10px; font-size: 16px; font-weight: 800; letter-spacing: -.03em; }
+    .brand-mark {
+      display: grid;
+      width: 37px;
+      height: 37px;
+      place-items: center;
+      border: 1px solid #4169b3;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #3974ea, #17429a);
+      color: #fff;
+      font-size: 17px;
+      box-shadow: 0 8px 28px rgba(47, 104, 223, .28);
+    }
+    .welcome-copy h1 { max-width: 580px; margin: 35px 0 15px; font-size: clamp(40px, 6vw, 68px); line-height: 1.05; letter-spacing: -.065em; }
+    .welcome-copy h1 span { color: var(--blue-bright); }
+    .welcome-copy > p { max-width: 510px; color: #a7b5ca; font-size: 16px; line-height: 1.75; }
+    .feature-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; margin-top: 30px; }
+    .feature-item { display: flex; align-items: center; gap: 10px; color: #cbd7e9; font-size: 13px; }
+    .feature-icon { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 9px; background: #172541; color: #91b5ff; }
+    .welcome-form { padding: 26px; border: 1px solid #26334a; border-radius: 20px; background: rgba(16, 24, 39, .92); box-shadow: 0 25px 90px rgba(0, 0, 0, .25); }
+    .welcome-form h2 { margin: 0 0 6px; font-size: 22px; letter-spacing: -.035em; }
+    .welcome-form > p { margin: 0 0 22px; color: var(--muted); font-size: 13px; }
+    .form-grid { display: grid; grid-template-columns: 1fr 110px; gap: 13px; }
+    .role-options { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+    .role-option { position: relative; }
+    .role-option input { position: absolute; width: 1px; height: 1px; opacity: 0; }
+    .role-option span {
+      display: grid;
+      min-height: 69px;
+      place-items: center;
+      padding: 8px 6px;
+      border: 1px solid #29364b;
+      border-radius: 11px;
+      background: #0c1422;
+      color: #aab8cc;
+      text-align: center;
+      font-size: 11px;
+      font-weight: 650;
+      cursor: pointer;
+    }
+    .role-option input:checked + span { border-color: #5a8fff; background: #182849; color: #dce8ff; box-shadow: inset 0 0 0 1px #5a8fff; }
+    .role-option input:focus-visible + span { outline: 2px solid var(--blue-bright); outline-offset: 2px; }
+    .welcome-form .stack { gap: 14px; }
+    .welcome-form .btn { width: 100%; min-height: 46px; margin-top: 3px; }
+    .fine-print { margin-top: 13px !important; font-size: 11px !important; line-height: 1.6; }
+
+    /* Application shell */
+    .app-shell { min-height: 100vh; }
+    .sidebar {
+      position: fixed;
+      inset: 0 auto 0 0;
+      z-index: 5;
+      display: flex;
+      width: 250px;
+      flex-direction: column;
+      padding: 23px 15px 15px;
+      border-right: 1px solid #1c2738;
+      background: #0b111e;
+    }
+    .sidebar .brand { padding: 0 9px 28px; }
+    .nav-label { padding: 13px 10px 7px; color: #64738a; font-size: 10px; font-weight: 750; letter-spacing: .12em; text-transform: uppercase; }
+    .nav-list { display: grid; gap: 4px; }
+    .nav-item {
+      display: flex;
+      width: 100%;
+      min-height: 40px;
+      align-items: center;
+      gap: 11px;
+      padding: 8px 11px;
+      border: 1px solid transparent;
+      border-radius: 9px;
+      background: transparent;
+      color: #9aa9bf;
+      text-align: left;
+      font-size: 12px;
+      font-weight: 630;
+    }
+    .nav-item:hover { background: #121c2c; color: #e1eaff; }
+    .nav-item.active { border-color: #263b60; background: #172643; color: #c8dcff; }
+    .nav-symbol { display: inline-grid; width: 20px; place-items: center; color: #8ba9de; font-size: 15px; }
+    .sidebar-bottom { margin-top: auto; }
+    .profile-mini { display: flex; align-items: center; gap: 10px; padding: 14px 9px 4px; border-top: 1px solid #202b3d; }
+    .avatar { display: grid; width: 34px; height: 34px; flex: 0 0 auto; place-items: center; border-radius: 50%; background: #24437f; color: #d9e7ff; font-size: 12px; font-weight: 800; }
+    .profile-mini strong { display: block; max-width: 140px; overflow: hidden; font-size: 12px; text-overflow: ellipsis; white-space: nowrap; }
+    .profile-mini small { color: var(--muted); font-size: 10px; }
+    .mobile-bar { display: none; }
+    .main-area { min-height: 100vh; margin-left: 250px; }
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 4;
+      display: flex;
+      min-height: 70px;
+      align-items: center;
+      justify-content: space-between;
+      gap: 18px;
+      padding: 12px clamp(20px, 4vw, 52px);
+      border-bottom: 1px solid #1c2738;
+      background: rgba(8, 13, 24, .9);
+      backdrop-filter: blur(14px);
+    }
+    .breadcrumb { color: #8492a8; font-size: 12px; }
+    .breadcrumb strong { color: #e4ecfa; font-weight: 680; }
+    .topbar-right { display: flex; align-items: center; gap: 10px; }
+    .subject-select { width: auto; min-width: 145px; min-height: 37px; padding: 7px 32px 7px 11px; background: #111b2b; font-size: 12px; }
+    .content { width: min(1200px, 100%); margin: 0 auto; padding: 32px clamp(20px, 4vw, 52px) 60px; }
+    .page-heading { display: flex; align-items: end; justify-content: space-between; gap: 18px; margin-bottom: 25px; }
+    .page-heading h1 { margin: 5px 0 5px; font-size: clamp(26px, 3vw, 34px); line-height: 1.15; letter-spacing: -.05em; }
+    .page-heading p { margin: 0; color: var(--muted); }
+    .hero-card {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(24px, 4vw, 36px);
+      border: 1px solid #2a4169;
+      border-radius: 19px;
+      background: linear-gradient(115deg, #172a4b 0%, #14213a 55%, #15243a 100%);
+    }
+    .hero-card::after {
+      position: absolute;
+      top: -105px;
+      right: -66px;
+      width: 310px;
+      height: 310px;
+      border: 1px solid rgba(139, 179, 255, .16);
+      border-radius: 50%;
+      box-shadow: 0 0 0 32px rgba(139, 179, 255, .035), 0 0 0 66px rgba(139, 179, 255, .025);
+      content: "";
+      pointer-events: none;
+    }
+    .hero-card h2 { position: relative; z-index: 1; max-width: 600px; margin: 8px 0 9px; font-size: clamp(23px, 3vw, 32px); letter-spacing: -.045em; }
+    .hero-card p { position: relative; z-index: 1; max-width: 540px; margin: 0; color: #adbed9; }
+    .hero-actions { position: relative; z-index: 1; display: flex; flex-wrap: wrap; gap: 9px; margin-top: 21px; }
+    .stats-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); margin: 18px 0 28px; }
+    .stat-card { min-height: 103px; padding: 16px; }
+    .stat-top { display: flex; align-items: center; justify-content: space-between; color: var(--muted); font-size: 11px; }
+    .stat-card strong { display: block; margin-top: 8px; font-size: 24px; letter-spacing: -.04em; }
+    .stat-card small { color: #7988a0; font-size: 10px; }
+    .stat-symbol { display: grid; width: 29px; height: 29px; place-items: center; border-radius: 9px; background: #182844; color: #8ab2ff; }
+    .home-columns { grid-template-columns: minmax(0, 1.45fr) minmax(270px, .85fr); }
+    .subject-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .subject-card { position: relative; display: flex; min-height: 126px; flex-direction: column; align-items: start; justify-content: space-between; padding: 17px; text-align: left; transition: border-color .15s, transform .15s; }
+    .subject-card:hover { transform: translateY(-2px); border-color: #405986; }
+    .subject-card .subject-symbol { display: grid; width: 34px; height: 34px; place-items: center; border-radius: 10px; background: #192a48; color: #93b8ff; font-size: 17px; }
+    .subject-card strong { margin-top: 14px; font-size: 13px; }
+    .subject-card small { color: var(--muted); font-size: 10px; }
+    .quick-list { display: grid; gap: 8px; }
+    .quick-link { display: flex; align-items: center; gap: 12px; padding: 11px; border: 1px solid transparent; border-radius: 11px; background: #111b2b; text-align: left; }
+    .quick-link:hover { border-color: #2b3f60; background: #152239; }
+    .quick-icon { display: grid; width: 36px; height: 36px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: #1b2b48; color: #93b8ff; }
+    .quick-link strong { display: block; font-size: 12px; }
+    .quick-link small { color: var(--muted); font-size: 10px; }
+    .callout { padding: 14px; border: 1px solid #293a55; border-radius: 12px; background: #121d2f; color: #aab9ce; font-size: 12px; }
+    .callout strong { color: #e3ebf9; }
+    .tool-layout { display: grid; grid-template-columns: minmax(0, 1fr) minmax(240px, .72fr); gap: 17px; align-items: start; }
+    .tool-form { display: grid; gap: 15px; }
+    .response-box { min-height: 176px; padding: 17px; border: 1px solid #283750; border-radius: 12px; background: #0d1523; }
+    .response-box h3 { margin: 0 0 8px; font-size: 14px; }
+    .response-box p { margin: 0 0 10px; color: #a9b8ce; line-height: 1.7; }
+    .response-box ul, .response-box ol { margin: 8px 0 0; padding-left: 20px; color: #a9b8ce; }
+    .response-box li { margin: 5px 0; }
+    .ai-output { color: #c5d1e4; line-height: 1.8; overflow-wrap: anywhere; white-space: pre-wrap; }
+    .ai-error { border-color: #75414a; background: #25181f; color: #ffbbc0; }
+    .ai-status { display: inline-flex; align-items: center; gap: 7px; padding: 6px 9px; border: 1px solid #2a3850; border-radius: 999px; background: #111b2b; color: #aebbd0; font-size: 10px; white-space: nowrap; }
+    .ai-status .dot { background: var(--amber); }
+    .ai-status.ready { border-color: #28523f; color: #a8e7c8; }
+    .ai-status.ready .dot { background: var(--green); }
+    .ai-status.error { border-color: #653d46; color: #ffb5bc; }
+    .ai-status.error .dot { background: var(--red); }
+    .form-note { margin: -5px 0 0; color: #7e8da5; font-size: 11px; }
+    .flashcard {
+      display: grid;
+      min-height: 208px;
+      place-items: center;
+      padding: 24px;
+      border: 1px solid #355185;
+      border-radius: 15px;
+      background: linear-gradient(145deg, #17294a, #111b2e);
+      text-align: center;
+      cursor: pointer;
+    }
+    .flashcard h3 { max-width: 550px; margin: 10px 0; font-size: 21px; letter-spacing: -.025em; }
+    .flashcard p { margin: 0; color: #a9bbd7; }
+    .progress-track { height: 7px; overflow: hidden; border-radius: 99px; background: #202d41; }
+    .progress-fill { height: 100%; border-radius: inherit; background: linear-gradient(90deg, #4b83f2, #64d4e8); transition: width .2s; }
+    .fact-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 13px; }
+    .fact-card { padding: 17px; }
+    .fact-card .fact-mark { color: var(--amber); font-size: 18px; }
+    .fact-card p { margin: 9px 0 0; color: #c2cee0; line-height: 1.7; }
+    .upload-zone { display: grid; min-height: 138px; place-items: center; padding: 17px; border: 1px dashed #3b4c69; border-radius: 12px; background: #0c1422; text-align: center; }
+    .upload-zone input { max-width: 100%; padding: 8px; border: 0; background: transparent; font-size: 11px; }
+    .upload-zone strong { display: block; margin-bottom: 3px; font-size: 12px; }
+    .upload-zone p { margin: 0; color: var(--muted); font-size: 11px; }
+    .quiz-question { margin: 0; font-size: 17px; line-height: 1.5; }
+    .answer-list { display: grid; gap: 8px; }
+    .answer-option { display: flex; align-items: center; gap: 10px; padding: 11px 12px; border: 1px solid #29364b; border-radius: 10px; background: #0d1523; cursor: pointer; }
+    .answer-option:hover { border-color: #5275ae; }
+    .answer-option input { width: 15px; min-height: 15px; accent-color: var(--blue); }
+    .answer-option.correct { border-color: #3d9e73; background: #10251f; }
+    .answer-option.incorrect { border-color: #a34e5c; background: #28171c; }
+    .schedule-form { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr auto; gap: 9px; align-items: end; }
+    .schedule-table { width: 100%; border-collapse: collapse; }
+    .schedule-table th, .schedule-table td { padding: 12px 10px; border-bottom: 1px solid #222e42; text-align: left; }
+    .schedule-table th { color: #7f8ea5; font-size: 10px; font-weight: 700; letter-spacing: .08em; text-transform: uppercase; }
+    .schedule-table td { color: #c4d0e2; font-size: 12px; }
+    .schedule-table tr:last-child td { border-bottom: 0; }
+    .empty-state { padding: 28px 15px; color: var(--muted); text-align: center; font-size: 12px; }
+    .streak-strip { display: flex; flex-wrap: wrap; gap: 8px; }
+    .streak-day { display: grid; width: 42px; height: 53px; place-items: center; gap: 1px; border: 1px solid #29364b; border-radius: 10px; background: #0e1726; color: #74839a; font-size: 10px; }
+    .streak-day span { font-size: 16px; }
+    .streak-day.done { border-color: #3b795f; background: #142820; color: #b4ebcf; }
+    .toast {
+      position: fixed;
+      right: 22px;
+      bottom: 22px;
+      z-index: 20;
+      max-width: min(380px, calc(100vw - 40px));
+      padding: 12px 16px;
+      border: 1px solid #36517c;
+      border-radius: 11px;
+      background: #172743;
+      color: #e3edff;
+      box-shadow: 0 12px 40px rgba(0, 0, 0, .35);
+      font-size: 12px;
+      animation: toast-in .18s ease-out;
+    }
+    @keyframes toast-in { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+    @media (max-width: 1020px) {
+      .sidebar { width: 220px; }
+      .main-area { margin-left: 220px; }
+      .stats-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+      .schedule-form { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+    @media (max-width: 760px) {
+      .welcome-screen { grid-template-columns: 1fr; gap: 30px; padding: 28px 20px; }
+      .welcome-copy h1 { margin-top: 22px; }
+      .feature-list { margin-top: 21px; }
+      .welcome-form { max-width: 540px; }
+      .sidebar { display: none; }
+      .main-area { margin-left: 0; }
+      .mobile-bar { position: fixed; inset: auto 0 0; z-index: 6; display: flex; justify-content: space-around; gap: 2px; padding: 7px max(6px, env(safe-area-inset-left)) calc(7px + env(safe-area-inset-bottom)); border-top: 1px solid #202b3d; background: rgba(10, 16, 28, .96); backdrop-filter: blur(14px); }
+      .mobile-nav { display: grid; min-width: 53px; justify-items: center; gap: 2px; padding: 5px 7px; border: 0; border-radius: 9px; background: transparent; color: #8493a9; font-size: 9px; }
+      .mobile-nav span:first-child { font-size: 15px; }
+      .mobile-nav.active { background: #172643; color: #c8dcff; }
+      .mobile-menu {
+        position: fixed;
+        right: 12px;
+        bottom: calc(69px + env(safe-area-inset-bottom));
+        z-index: 8;
+        display: grid;
+        width: min(240px, calc(100vw - 24px));
+        gap: 3px;
+        padding: 8px;
+        border: 1px solid #2a3850;
+        border-radius: 13px;
+        background: #101827;
+        box-shadow: 0 15px 45px rgba(0, 0, 0, .45);
+      }
+      .mobile-menu button { min-height: 38px; padding: 8px 10px; border: 0; border-radius: 8px; background: transparent; color: #bac7dc; text-align: left; font-size: 12px; }
+      .mobile-menu button:hover { background: #172643; color: #e3edff; }
+      .content { padding-bottom: 95px; }
+      .tool-layout, .home-columns { grid-template-columns: 1fr; }
+      .topbar { min-height: 61px; padding-inline: 18px; }
+      .topbar-right .avatar { display: none; }
+    }
+    @media (max-width: 500px) {
+      .welcome-copy h1 { font-size: 42px; }
+      .feature-list { grid-template-columns: 1fr 1fr; }
+      .role-options { gap: 5px; }
+      .role-option span { font-size: 10px; }
+      .welcome-form { padding: 19px; }
+      .form-grid { grid-template-columns: 1fr 85px; }
+      .stats-grid { gap: 9px; }
+      .stat-card { min-height: 90px; padding: 12px; }
+      .stat-card strong { font-size: 21px; }
+      .subject-grid, .fact-list { grid-template-columns: 1fr 1fr; gap: 9px; }
+      .subject-card { min-height: 116px; padding: 13px; }
+      .schedule-form { grid-template-columns: 1fr 1fr; }
+      .schedule-form .btn { grid-column: 1 / -1; }
+      .schedule-table th, .schedule-table td { padding: 9px 6px; font-size: 10px; }
+      .page-heading { align-items: start; flex-direction: column; }
+      .topbar-right > .muted { display: none; }
+      .ai-status { gap: 0; padding: 6px; font-size: 0; }
+    }
+    /* StudyOrbit visual system */
+    :root {
+      color-scheme: light;
+      --bg: #f4f6fb;
+      --panel: #fff;
+      --panel-2: #f5f7fc;
+      --line: #e6e9f2;
+      --muted: #727f95;
+      --text: #18243b;
+      --blue: #5b5fe9;
+      --blue-bright: #5a61e9;
+      --cyan: #19a9b8;
+      --green: #168a60;
+      --amber: #a56a00;
+      --red: #be3949;
+      --radius: 18px;
+      --shadow-sm: 0 5px 18px rgba(31, 45, 75, .045);
+      --shadow-md: 0 14px 38px rgba(31, 45, 75, .085);
+    }
+    html { scroll-behavior: smooth; }
+    body {
+      background:
+        radial-gradient(ellipse at 100% 0, rgba(127, 120, 239, .08), transparent 27rem),
+        var(--bg);
+      color: var(--text);
+    }
+    ::selection { background: #dcdcff; color: #232477; }
+    button, input, select, textarea { color: inherit; }
+    button { -webkit-tap-highlight-color: transparent; }
+    button:disabled { cursor: wait; opacity: .72; transform: none !important; }
+    input, select, textarea {
+      border-color: #dce2ed;
+      background: #fff;
+      color: var(--text);
+      box-shadow: 0 1px 2px rgba(24, 36, 59, .025);
+      transition: border-color .16s, box-shadow .16s, background .16s;
+    }
+    input:hover, select:hover, textarea:hover { border-color: #c3cce0; }
+    input:focus, select:focus, textarea:focus {
+      border-color: #7778ef;
+      background: #fff;
+      box-shadow: 0 0 0 4px rgba(91, 95, 233, .12);
+      outline: 0;
+    }
+    input::placeholder, textarea::placeholder { color: #9aa4b5; }
+    .muted { color: var(--muted); }
+    .eyebrow { color: #5b5fe9; }
+    .btn {
+      border-radius: 11px;
+      background: linear-gradient(115deg, #6669ed, #5659d5);
+      box-shadow: 0 5px 12px rgba(86, 89, 213, .2);
+      transition: transform .18s ease, box-shadow .18s ease, filter .18s ease;
+    }
+    .btn:hover { background: linear-gradient(115deg, #7376f4, #6265df); box-shadow: 0 8px 18px rgba(86, 89, 213, .25); transform: translateY(-2px); }
+    .btn:active { transform: translateY(0) scale(.985); }
+    .btn.secondary { border-color: #e1e4f1; background: #f1f2ff; color: #4f52c9; box-shadow: none; }
+    .btn.secondary:hover { border-color: #d3d4fc; background: #e8e9ff; }
+    .btn.ghost { border-color: #e6e9f2; background: #fff; color: #596780; box-shadow: none; }
+    .btn.ghost:hover { border-color: #d7dcf1; background: #f6f7fc; }
+    .icon-button { border-color: #e5e8f0; background: #fff; color: #5b6578; transition: all .17s ease; }
+    .icon-button:hover { border-color: #efc5ce; background: #fff4f5; color: #b34154; transform: translateY(-1px); }
+    .card {
+      border-color: var(--line);
+      background: rgba(255, 255, 255, .94);
+      box-shadow: var(--shadow-sm);
+      transition: border-color .2s ease, box-shadow .2s ease, transform .2s ease;
+    }
+    .card-pad { padding: 23px; }
+    .section-title { color: #1a2842; }
+    .tag {
+      border-color: #e3e3ff;
+      background: #f1f0ff;
+      color: #5557c6;
+    }
+    .dot { box-shadow: 0 0 0 3px rgba(22, 138, 96, .10); }
+    .welcome-screen {
+      background:
+        radial-gradient(ellipse at 15% 25%, rgba(111, 104, 239, .13), transparent 38%),
+        radial-gradient(ellipse at 75% 85%, rgba(44, 184, 195, .11), transparent 34%),
+        #f5f6fb;
+    }
+    .brand { color: #17243c; }
+    .welcome-copy h1 span {
+      background: linear-gradient(110deg, #6265e5, #a05dce 55%, #e98c7d);
+      background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+    .welcome-copy > p { color: #647188; }
+    .feature-item { color: #45536c; }
+    .feature-icon { background: #efefff; color: #6264d6; }
+    .welcome-form {
+      border-color: rgba(255,255,255,.8);
+      background: rgba(255,255,255,.87);
+      box-shadow: 0 26px 85px rgba(48, 57, 101, .12);
+      backdrop-filter: blur(20px);
+    }
+    .welcome-form h2 { color: #1c2942; }
+    .welcome-form > p { color: #748198; }
+    .field label { color: #42506a; }
+    .role-option span { border-color: #e3e7f0; background: #f8f9fc; color: #67748b; transition: all .18s ease; }
+    .role-option input:checked + span { border-color: #7476eb; background: #f0efff; color: #4d51c3; box-shadow: inset 0 0 0 1px #7476eb; }
+    .fine-print { color: #79859a; }
+    .sidebar {
+      width: 256px;
+      padding: 21px 14px 14px;
+      border-right: 1px solid #e2e5f0;
+      background: linear-gradient(180deg, #fff 0%, #fbfbff 100%);
+      box-shadow: 5px 0 24px rgba(36, 48, 79, .035);
+      transition: width .23s ease;
+    }
+    .sidebar .brand { padding: 0 8px 21px; }
+    .brand-mark {
+      border: 0;
+      border-radius: 12px;
+      background: linear-gradient(145deg, #7778f3, #5053d0);
+      box-shadow: 0 7px 16px rgba(91, 95, 233, .23);
+    }
+    .sidebar .brand-mark { width: 34px; height: 34px; }
+    .nav-label { padding: 15px 10px 7px; color: #929db0; font-size: 9px; }
+    .nav-list { gap: 3px; }
+    .nav-item {
+      min-height: 39px;
+      border-radius: 10px;
+      color: #68758b;
+      font-size: 12px;
+      transition: background .17s, color .17s, transform .17s;
+    }
+    .nav-item:hover { background: #f1f2ff; color: #4f53c2; transform: translateX(2px); }
+    .nav-item.active { border-color: #e2e1ff; background: #efefff; color: #4e52c6; box-shadow: inset 3px 0 #6568e8; }
+    .nav-symbol { color: #8b8ed2; }
+    .nav-item.active .nav-symbol { color: #575bd5; }
+    .profile-mini { border-color: #ebedf3; }
+    .profile-mini strong { color: #26344d; }
+    .profile-mini small { color: #7e8ba0; }
+    .avatar { background: linear-gradient(145deg, #ecdbff, #d9e2ff); color: #574ba5; }
+    .sidebar-bottom > .nav-item { margin-bottom: 8px; }
+    .main-area { margin-left: 256px; transition: margin-left .23s ease; }
+    .topbar {
+      min-height: 68px;
+      padding: 11px clamp(20px, 4vw, 52px);
+      border-bottom-color: rgba(227, 231, 241, .85);
+      background: rgba(248, 249, 253, .85);
+      backdrop-filter: blur(18px);
+    }
+    .breadcrumb { color: #8490a4; }
+    .breadcrumb strong { color: #293650; }
+    .subject-select { min-height: 39px; border-color: #e1e5ef; background-color: #fff; font-weight: 650; }
+    .content { padding-top: 34px; }
+    .page-heading { margin-bottom: 23px; }
+    .page-heading h1 { color: #1b2942; }
+    .page-heading p { color: #748198; }
+    .hero-card {
+      border: 1px solid rgba(255,255,255,.45);
+      border-radius: 21px;
+      background:
+        radial-gradient(circle at 82% 16%, rgba(255,255,255,.19), transparent 11rem),
+        linear-gradient(112deg, #5d62df 0%, #7771de 52%, #8b68cf 100%);
+      box-shadow: 0 18px 42px rgba(90, 86, 196, .19);
+      animation: rise-in .45s both;
+    }
+    .hero-card h2 { color: #fff; }
+    .hero-card p { color: rgba(255,255,255,.84); }
+    .hero-card .eyebrow { color: #e4e5ff; }
+    .hero-card .tag { border-color: rgba(255,255,255,.27); background: rgba(255,255,255,.15); color: #fff; }
+    .hero-card .dot { background: #b0f1d0; }
+    .hero-card .btn { border-color: rgba(255,255,255,.3); background: #fff; color: #5558c7; box-shadow: 0 6px 14px rgba(44, 41, 112, .14); }
+    .hero-card .btn:hover { background: #f6f5ff; }
+    .hero-card .btn.secondary { border-color: rgba(255,255,255,.25); background: rgba(255,255,255,.15); color: #fff; box-shadow: none; }
+    .hero-card .btn.secondary:hover { background: rgba(255,255,255,.24); }
+    .hero-card::after { border-color: rgba(255,255,255,.22); box-shadow: 0 0 0 32px rgba(255,255,255,.05), 0 0 0 66px rgba(255,255,255,.035); }
+    .stats-grid { margin: 17px 0 26px; }
+    .stats-grid .stat-card { animation: rise-in .38s both; }
+    .stats-grid .stat-card:nth-child(2) { animation-delay: 35ms; }
+    .stats-grid .stat-card:nth-child(3) { animation-delay: 70ms; }
+    .stats-grid .stat-card:nth-child(4) { animation-delay: 105ms; }
+    .stat-card { min-height: 113px; padding: 17px 18px; }
+    .stat-card:hover { border-color: #d9dcfa; box-shadow: var(--shadow-md); transform: translateY(-3px); }
+    .stat-top { color: #76839a; font-size: 11px; }
+    .stat-card strong { color: #1d2b46; }
+    .stat-card small { color: #8894a7; }
+    .stat-symbol { border-radius: 10px; background: #f0efff; color: #6568dc; }
+    .stat-card:nth-child(2) .stat-symbol { background: #e9f8f3; color: #238964; }
+    .stat-card:nth-child(3) .stat-symbol { background: #fff3e5; color: #b87924; }
+    .stat-card:nth-child(4) .stat-symbol { background: #eaf5fc; color: #3486b5; }
+    .subject-card { border-color: #e8eaf2; background: #fff; }
+    .subject-card:hover { border-color: #d2d3fa; box-shadow: var(--shadow-md); }
+    .subject-card .subject-symbol { border-radius: 11px; background: linear-gradient(145deg, #f1f0ff, #e8edff); color: #5f63d2; }
+    .subject-card:nth-child(3n + 2) .subject-symbol { background: #e8f8f4; color: #26957a; }
+    .subject-card:nth-child(3n) .subject-symbol { background: #fff2e8; color: #d27b4c; }
+    .subject-card strong { color: #25344e; }
+    .subject-card small, .quick-link small { color: #7f8ba0; }
+    .quick-link { border-color: #edf0f6; background: #fff; transition: all .18s ease; }
+    .quick-link:hover { border-color: #dbdcfa; background: #fafaff; box-shadow: var(--shadow-sm); transform: translateY(-1px); }
+    .quick-link strong { color: #2c3a54; }
+    .quick-icon { border-radius: 11px; background: #f0efff; color: #6366d8; }
+    .quick-link:nth-child(2) .quick-icon { background: #e9f8f4; color: #258b73; }
+    .quick-link:nth-child(3) .quick-icon { background: #fff2e7; color: #bc7433; }
+    .quick-link:nth-child(4) .quick-icon { background: #eaf4fc; color: #3987b4; }
+    .callout { border-color: #e8e9f4; background: #f7f7fc; color: #65728a; }
+    .callout strong { color: #303e58; }
+    .tool-layout { gap: 17px; }
+    .tool-layout > .card, .content > .card { animation: rise-in .36s both; }
+    .tool-layout > .card:nth-child(2) { animation-delay: .045s; }
+    .response-box { border-color: #e7eaf2; background: #f8f9fc; }
+    .response-box p, .response-box ol, .response-box ul { color: #596981; }
+    .response-box h3 { color: #293852; }
+    .ai-output { color: #43516a; }
+    .ai-error { border-color: #f2c4cb; background: #fff3f4; color: #9c293b; }
+    .ai-status { border-color: #e5e8f1; background: #fff; color: #727e92; }
+    .ai-status.ready { border-color: #d1eddf; background: #f2fbf6; color: #24754f; }
+    .ai-status.error { border-color: #f2d4d8; background: #fff7f7; color: #a03948; }
+    .form-note { color: #7b879b; }
+    .flashcard {
+      border-color: #dcdafa;
+      background: radial-gradient(circle at 90% 10%, rgba(255,255,255,.55), transparent 12rem), linear-gradient(145deg, #f2f0ff, #edf4ff);
+      box-shadow: inset 0 1px 0 #fff;
+      transition: transform .24s ease, box-shadow .24s ease;
+    }
+    .flashcard:hover { box-shadow: var(--shadow-md); transform: perspective(900px) rotateX(1deg) translateY(-2px); }
+    .flashcard h3 { color: #30355f; }
+    .flashcard p { color: #727c9d; }
+    .progress-track { background: #e7e9f2; }
+    .progress-fill { background: linear-gradient(90deg, #696ce8, #46bfd0); }
+    .fact-card { min-height: 148px; }
+    .fact-card:hover { border-color: #efdfbf; box-shadow: var(--shadow-md); transform: translateY(-3px); }
+    .fact-card .fact-mark { color: #df9c42; }
+    .fact-card p { color: #4d5c73; }
+    .upload-zone { border-color: #c9cce7; background: #f8f8ff; transition: border-color .2s, background .2s; }
+    .upload-zone:hover { border-color: #7778e7; background: #f2f1ff; }
+    .upload-zone strong { color: #36435c; }
+    .upload-zone p { color: #7c879b; }
+    .answer-option { border-color: #e5e8f0; background: #fff; transition: border-color .15s, background .15s, transform .15s; }
+    .answer-option:hover { border-color: #babcf1; background: #fafaff; transform: translateX(2px); }
+    .answer-option.correct { border-color: #a9dfc3; background: #f1fbf5; }
+    .answer-option.incorrect { border-color: #f0bdc5; background: #fff5f6; }
+    .schedule-table th, .schedule-table td { border-color: #edf0f5; }
+    .schedule-table th { color: #8290a4; }
+    .schedule-table td { color: #45536a; }
+    .schedule-table tbody tr:hover { background: #fafaff; }
+    .empty-state { color: #7a879b; }
+    .streak-day { border-color: #e5e8ef; background: #fff; color: #8b97a9; }
+    .streak-day.done { border-color: #c9ebd9; background: #f0faf4; color: #277952; }
+    .toast {
+      right: 25px;
+      bottom: 25px;
+      border-color: #e0e2fa;
+      background: rgba(255,255,255,.97);
+      color: #293755;
+      box-shadow: 0 14px 38px rgba(38, 47, 88, .16);
+      backdrop-filter: blur(15px);
+      animation: toast-in .22s cubic-bezier(.2,.8,.2,1);
+    }
+    .mobile-bar { border-top-color: #e4e7f0 !important; background: rgba(255,255,255,.94) !important; box-shadow: 0 -8px 28px rgba(37,48,76,.07); }
+    .mobile-nav { color: #7d899c; transition: background .16s, color .16s, transform .16s; }
+    .mobile-nav.active { background: #f0efff !important; color: #5154c7 !important; }
+    .mobile-nav:active { transform: scale(.94); }
+    .mobile-menu { border-color: #e4e7f0 !important; background: rgba(255,255,255,.98) !important; box-shadow: 0 18px 50px rgba(32,44,78,.16) !important; }
+    .mobile-menu button { color: #4d5b73 !important; }
+    .mobile-menu button:hover { background: #f1f1ff !important; color: #4f52c5 !important; }
+    .page-content-enter { animation: page-enter .25s ease both; }
+    .nav-search-wrap { position: relative; width: clamp(150px, 21vw, 255px); }
+    .nav-search {
+      min-height: 39px;
+      padding: 8px 12px 8px 35px;
+      border-color: #e3e6ef;
+      border-radius: 11px;
+      background: rgba(255,255,255,.8);
+      font-size: 12px;
+    }
+    .nav-search-wrap::before { position: absolute; top: 8px; left: 12px; z-index: 1; color: #929cb0; font-size: 15px; content: "⌕"; pointer-events: none; }
+    .search-results {
+      position: absolute;
+      top: calc(100% + 8px);
+      right: 0;
+      z-index: 12;
+      width: min(320px, calc(100vw - 40px));
+      padding: 7px;
+      border: 1px solid #e5e8f0;
+      border-radius: 14px;
+      background: #fff;
+      box-shadow: 0 18px 45px rgba(32,44,78,.15);
+      animation: rise-in .16s ease both;
+    }
+    .search-results button { display: flex; width: 100%; min-height: 38px; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 9px; background: transparent; color: #4a5870; text-align: left; font-size: 12px; }
+    .search-results button:hover, .search-results button:focus-visible { background: #f2f1ff; color: #4f52c5; }
+    .search-hint { padding: 8px 10px; color: #8b96a8; font-size: 11px; }
+    .sidebar-collapsed .sidebar { width: 78px; }
+    .sidebar-collapsed .main-area { margin-left: 78px; }
+    .sidebar-collapsed .sidebar .brand { justify-content: center; padding-inline: 0; }
+    .sidebar-collapsed .sidebar .brand-name, .sidebar-collapsed .sidebar .nav-label,
+    .sidebar-collapsed .sidebar .nav-item .nav-text, .sidebar-collapsed .sidebar .profile-copy { display: none; }
+    .sidebar-collapsed .sidebar .nav-item { justify-content: center; padding-inline: 6px; }
+    .sidebar-collapsed .sidebar .nav-symbol { width: 26px; font-size: 17px; }
+    .sidebar-collapsed .sidebar .profile-mini { justify-content: center; padding-inline: 0; }
+    .sidebar-collapsed #sidebarToggle { transform: rotate(180deg); }
+    .sidebar-scroll { min-height: 0; overflow-x: hidden; overflow-y: auto; scrollbar-width: thin; scrollbar-color: #dce0eb transparent; }
+    .sidebar-toggle {
+      display: grid;
+      width: 29px;
+      height: 29px;
+      flex: 0 0 auto;
+      place-items: center;
+      border: 1px solid #e7e9f1;
+      border-radius: 9px;
+      background: #fff;
+      color: #6a7690;
+      transition: transform .22s, background .17s;
+    }
+    .sidebar-toggle:hover { background: #f1f1ff; }
+    .activity-layout { grid-template-columns: minmax(0, 1.2fr) minmax(250px, .8fr); margin-top: 18px; }
+    .activity-chart { display: grid; min-height: 190px; grid-template-columns: repeat(7, minmax(0, 1fr)); align-items: end; gap: 12px; padding: 17px 4px 0; border-bottom: 1px solid #edf0f5; }
+    .activity-day { display: grid; height: 155px; grid-template-rows: auto 1fr auto; align-items: end; gap: 8px; text-align: center; }
+    .activity-count { color: #78859b; font-size: 10px; }
+    .activity-bar-track { display: flex; width: 100%; height: 100%; align-items: end; justify-content: center; }
+    .activity-bar { width: min(28px, 72%); min-height: 4px; border-radius: 8px 8px 3px 3px; background: linear-gradient(180deg, #8888f3, #5f63df); box-shadow: 0 5px 12px rgba(95,99,223,.13); transform-origin: bottom; animation: bar-grow .65s cubic-bezier(.2,.8,.2,1) both; }
+    .activity-label { padding-bottom: 8px; color: #77849a; font-size: 10px; }
+    .activity-list { display: grid; gap: 8px; }
+    .activity-item { display: flex; min-width: 0; align-items: center; gap: 10px; padding: 10px; border: 1px solid #eef0f5; border-radius: 11px; background: #fff; }
+    button.activity-item { width: 100%; text-align: left; cursor: pointer; transition: border-color .16s, background .16s; }
+    button.activity-item:hover { border-color: #dadaf5; background: #fbfaff; }
+    .activity-icon { display: grid; width: 32px; height: 32px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: #f0efff; color: #5f63d6; }
+    .activity-item strong { display: block; overflow: hidden; color: #394760; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
+    .activity-item small { color: #8893a6; font-size: 10px; }
+    .empty-card { display: grid; min-height: 132px; place-content: center; gap: 4px; padding: 20px; border: 1px dashed #dfe3ed; border-radius: 13px; color: #7b879b; text-align: center; font-size: 12px; }
+    .empty-card strong { color: #4e5b72; }
+    .confirmation { max-width: 360px; border: 1px solid #e4e7f0; border-radius: 16px; background: #fff; color: #27354e; box-shadow: 0 24px 70px rgba(26,37,67,.23); }
+    .confirmation::backdrop { background: rgba(27,37,62,.36); backdrop-filter: blur(3px); }
+    .confirmation h2 { margin: 0 0 8px; font-size: 18px; }
+    .confirmation p { color: #647188; font-size: 13px; }
+    @keyframes rise-in { from { opacity: 0; transform: translateY(9px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes page-enter { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes bar-grow { from { transform: scaleY(.15); } to { transform: scaleY(1); } }
+    @media (max-width: 1050px) and (min-width: 761px) {
+      .nav-search-wrap { width: clamp(120px, 18vw, 190px); }
+      .topbar { gap: 12px; }
+    }
+    @media (max-width: 760px) {
+      .sidebar { width: 256px; }
+      .main-area, .sidebar-collapsed .main-area { margin-left: 0; }
+      .sidebar-collapsed .sidebar { width: 256px; }
+      .sidebar-toggle { display: none; }
+      .topbar { gap: 9px; }
+      .topbar-right { min-width: 0; gap: 7px; }
+      .nav-search-wrap { width: clamp(115px, 34vw, 210px); }
+      .breadcrumb { font-size: 10px; white-space: nowrap; }
+      .activity-layout { grid-template-columns: 1fr; }
+    }
+    @media (max-width: 500px) {
+      .content { padding: 25px 15px 95px; }
+      .topbar { padding-inline: 14px; }
+      .topbar-right { gap: 6px; }
+      .subject-select { min-width: 0; max-width: 112px; padding-inline: 7px 22px; font-size: 10px; }
+      .nav-search-wrap { width: 35px; }
+      .nav-search { width: 35px; padding-inline: 31px 8px; transition: width .18s, box-shadow .18s; }
+      .nav-search:focus { position: absolute; top: 0; right: 0; z-index: 2; width: min(230px, calc(100vw - 90px)); }
+      .search-results { right: -4px; }
+      .stats-grid { gap: 10px; }
+      .stat-card { padding: 13px; }
+      .activity-layout { gap: 12px; }
+      .activity-chart { gap: 5px; }
+      .activity-day { height: 142px; }
+      .schedule-table th, .schedule-table td { font-size: 10px; }
+      .page-heading h1 { font-size: 27px; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after {
+        scroll-behavior: auto !important;
+        animation-duration: .01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: .01ms !important;
+      }
+    }
+    .exam-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 12px; margin-bottom: 16px; }
+    .exam-stat { padding: 16px; }
+    .exam-stat span { display: block; color: #727f95; font-size: 11px; }
+    .exam-stat strong { display: block; margin-top: 6px; color: #293755; font-size: 23px; }
+    .exam-filters { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 10px; margin-bottom: 14px; }
+    .exam-filters .field { min-width: 0; }
+    .exam-filters .wide { grid-column: 1 / -1; }
+    .exam-list { display: grid; gap: 12px; }
+    .exam-card { padding: 18px; }
+    .exam-card-top { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; }
+    .exam-card h3 { margin: 7px 0 4px; color: #26344f; font-size: 17px; }
+    .exam-card p { margin: 5px 0; color: #69778e; font-size: 12px; }
+    .exam-meta { display: flex; flex-wrap: wrap; gap: 7px; margin: 12px 0; }
+    .exam-badge { display: inline-flex; align-items: center; gap: 5px; padding: 5px 8px; border: 1px solid #e4e7f0; border-radius: 999px; background: #f8f9fc; color: #53617a; font-size: 10px; font-weight: 700; }
+    .exam-badge.warn { border-color: #f0dfba; background: #fff9eb; color: #8b610c; }
+    .exam-badge.verified { border-color: #c9ebd9; background: #f0faf4; color: #277952; }
+    .exam-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 13px; }
+    .exam-topics { color: #65738b; font-size: 12px; line-height: 1.65; }
+    .exam-plan { display: grid; gap: 8px; margin-top: 13px; padding-top: 13px; border-top: 1px solid #edf0f5; }
+    .exam-plan-item { display: flex; align-items: flex-start; gap: 8px; color: #59677d; font-size: 11px; }
+    .exam-plan-item input { width: 15px; min-height: 15px; margin: 1px 0 0; accent-color: #5b5fe9; }
+    .exam-form-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 11px; }
+    .exam-form-grid .wide { grid-column: 1 / -1; }
+    .exam-form-grid textarea { min-height: 82px; }
+    .exam-empty { padding: 25px 16px; border: 1px dashed #dfe3ed; border-radius: 13px; color: #7b879b; text-align: center; font-size: 12px; }
+    .exam-source { display: inline-flex; align-items: center; gap: 5px; color: #5359c7; font-size: 11px; font-weight: 650; text-decoration: none; }
+    .exam-source:hover { text-decoration: underline; }
+    .career-tabs { display: flex; flex-wrap: wrap; gap: 7px; margin: 0 0 16px; padding: 5px; border: 1px solid #e5e8f0; border-radius: 13px; background: #fff; }
+    .career-tab { min-height: 36px; padding: 8px 12px; border: 0; border-radius: 9px; background: transparent; color: #63718a; font-size: 11px; font-weight: 700; }
+    .career-tab.active { background: #f0efff; color: #5154c7; }
+    .career-hero { padding: clamp(20px, 4vw, 34px); border: 1px solid #dedcff; border-radius: 19px; background: radial-gradient(ellipse at 95% 5%, rgba(109,99,231,.15), transparent 36%), linear-gradient(135deg,#fff,#f6f5ff); }
+    .career-hero h2 { margin: 9px 0; color: #26344f; font-size: clamp(22px,3vw,32px); letter-spacing: -.04em; }
+    .career-hero p { max-width: 680px; color: #69778e; font-size: 13px; line-height: 1.7; }
+    .career-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+    .career-card { padding: 17px; transition: transform .16s, box-shadow .16s, border-color .16s; }
+    .career-card:hover { transform: translateY(-2px); border-color: #d5d4f4; box-shadow: 0 12px 28px rgba(50,57,105,.08); }
+    .career-card h3 { margin: 6px 0; color: #2d3b56; font-size: 16px; }
+    .career-card p,.career-detail p { color: #68768d; font-size: 12px; line-height: 1.65; }
+    .career-reason { padding: 9px 10px; border-radius: 9px; background: #f3f3ff; color: #5355a7 !important; }
+    .career-category { color: #5d61d8; font-size: 10px; font-weight: 750; letter-spacing: .1em; text-transform: uppercase; }
+    .career-check-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 8px; }
+    .career-check { display: flex; min-width: 0; align-items: flex-start; gap: 8px; padding: 9px; border: 1px solid #e8eaf2; border-radius: 9px; color: #56647c; font-size: 11px; }
+    .career-check input { width: 15px; min-height: 15px; flex: 0 0 auto; margin: 1px 0 0; accent-color: #5b5fe9; }
+    .career-detail { padding: 22px; }
+    .career-detail h2 { margin: 4px 0 8px; color: #26344f; font-size: 24px; }
+    .career-facts { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 10px; }
+    .career-fact { padding: 12px; border: 1px solid #eceef4; border-radius: 11px; background: #fff; }
+    .career-fact strong { display: block; margin-bottom: 5px; color: #45536c; font-size: 11px; }
+    .career-fact span { color: #6d7a8f; font-size: 11px; line-height: 1.6; }
+    .career-plan-list { display: grid; gap: 8px; }
+    .career-plan-row { display: flex; align-items: flex-start; gap: 9px; padding: 10px; border: 1px solid #eceef4; border-radius: 10px; color: #59677e; font-size: 12px; }
+    .career-plan-row input { width: 16px; min-height: 16px; flex: 0 0 auto; margin: 1px 0 0; accent-color: #5b5fe9; }
+    .career-response { min-height: 45px; margin-top: 13px; padding: 12px; border: 1px solid #e5e8f0; border-radius: 11px; background: #fafbfe; color: #526078; font-size: 12px; line-height: 1.75; white-space: pre-wrap; }
+    .career-response.ai-output { white-space: normal; }
+    .career-note { padding: 11px 13px; border-left: 3px solid #8b8ce9; border-radius: 8px; background: #f6f6ff; color: #626e84; font-size: 11px; line-height: 1.65; }
+    .career-compare { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; }
+    .theme-control { display: inline-flex; align-items: center; gap: 7px; color: #727e92; font-size: 11px; white-space: nowrap; }
+    .theme-select { width: auto; min-width: 92px; min-height: 37px; padding: 6px 26px 6px 9px; border-color: #e1e5ef; background: #fff; font-size: 11px; }
+    :root[data-theme="dark"] { color-scheme: dark; --bg: #080d18; --panel: #101827; --panel-2: #141e30; --line: #263247; --muted: #a2afc3; --text: #edf3ff; --blue: #648fff; --blue-bright: #8fb2ff; }
+    :root[data-theme="dark"] body { background: var(--bg); color: var(--text); }
+    :root[data-theme="dark"] .welcome-screen { background: radial-gradient(ellipse at 16% 22%, rgba(50,98,194,.19), transparent 43%), radial-gradient(ellipse at 68% 88%, rgba(33,117,161,.12), transparent 36%), var(--bg); }
+    :root[data-theme="dark"] .welcome-copy > p, :root[data-theme="dark"] .feature-item { color: #aebbd0; }
+    :root[data-theme="dark"] .welcome-form { border-color: #26334a; background: rgba(16,24,39,.94); }
+    :root[data-theme="dark"] .welcome-form h2, :root[data-theme="dark"] .field label { color: #dce6f7; }
+    :root[data-theme="dark"] .welcome-form > p, :root[data-theme="dark"] .fine-print { color: #96a3b8; }
+    :root[data-theme="dark"] input, :root[data-theme="dark"] select, :root[data-theme="dark"] textarea { border-color: #344159; background-color: #0b1321; color: #edf3ff; }
+    :root[data-theme="dark"] .role-option span { border-color: #344159; background: #0c1422; color: #aab8cc; }
+    :root[data-theme="dark"] .role-option input:checked + span { border-color: #648fff; background: #182849; color: #dce8ff; }
+    :root[data-theme="dark"] .sidebar { border-color: #202b3d; background: linear-gradient(180deg,#0c1422,#0a101c); }
+    :root[data-theme="dark"] .brand, :root[data-theme="dark"] .profile-mini strong { color: #edf3ff; }
+    :root[data-theme="dark"] .nav-item { color: #aab8cc; }
+    :root[data-theme="dark"] .nav-item:hover { background: #172237; color: #edf3ff; }
+    :root[data-theme="dark"] .nav-item.active { border-color: #30476d; background: #172643; color: #dce8ff; }
+    :root[data-theme="dark"] .nav-symbol, :root[data-theme="dark"] .nav-item.active .nav-symbol { color: #9bbaff; }
+    :root[data-theme="dark"] .profile-mini { border-color: #263247; }
+    :root[data-theme="dark"] .main-area { background: var(--bg); }
+    :root[data-theme="dark"] .topbar { border-color: #263247; background: rgba(8,13,24,.9); }
+    :root[data-theme="dark"] .breadcrumb { color: #96a3b8; }
+    :root[data-theme="dark"] .breadcrumb strong, :root[data-theme="dark"] .page-heading h1 { color: #edf3ff; }
+    :root[data-theme="dark"] .page-heading p, :root[data-theme="dark"] .muted { color: #a2afc3; }
+    :root[data-theme="dark"] .card, :root[data-theme="dark"] .subject-card, :root[data-theme="dark"] .quick-link, :root[data-theme="dark"] .activity-item, :root[data-theme="dark"] .career-fact { border-color: #263247; background: #101827; color: #edf3ff; }
+    :root[data-theme="dark"] .section-title, :root[data-theme="dark"] .subject-card strong, :root[data-theme="dark"] .quick-link strong, :root[data-theme="dark"] .callout strong, :root[data-theme="dark"] .response-box h3, :root[data-theme="dark"] .exam-stat strong, :root[data-theme="dark"] .exam-card h3, :root[data-theme="dark"] .career-hero h2, :root[data-theme="dark"] .career-card h3, :root[data-theme="dark"] .career-detail h2 { color: #e8effb; }
+    :root[data-theme="dark"] .subject-card small, :root[data-theme="dark"] .quick-link small, :root[data-theme="dark"] .stat-card small, :root[data-theme="dark"] .callout, :root[data-theme="dark"] .response-box p, :root[data-theme="dark"] .response-box ol, :root[data-theme="dark"] .response-box ul, :root[data-theme="dark"] .ai-output, :root[data-theme="dark"] .fact-card p, :root[data-theme="dark"] .upload-zone p, :root[data-theme="dark"] .schedule-table td, :root[data-theme="dark"] .exam-card p, :root[data-theme="dark"] .exam-topics, :root[data-theme="dark"] .career-hero p, :root[data-theme="dark"] .career-card p, :root[data-theme="dark"] .career-detail p, :root[data-theme="dark"] .career-check, :root[data-theme="dark"] .career-plan-row, :root[data-theme="dark"] .career-fact span { color: #b0bdd1; }
+    :root[data-theme="dark"] .quick-link:hover, :root[data-theme="dark"] .subject-card:hover { border-color: #405986; background: #141e30; }
+    :root[data-theme="dark"] .tag, :root[data-theme="dark"] .stat-symbol, :root[data-theme="dark"] .subject-card .subject-symbol, :root[data-theme="dark"] .quick-icon, :root[data-theme="dark"] .career-tab.active { border-color: #30476d; background: #192a48; color: #b9d0ff; }
+    :root[data-theme="dark"] .callout, :root[data-theme="dark"] .response-box, :root[data-theme="dark"] .upload-zone, :root[data-theme="dark"] .career-response, :root[data-theme="dark"] .career-note { border-color: #2b3b54; background: #0d1523; color: #b0bdd1; }
+    :root[data-theme="dark"] .ai-error { border-color: #75414a; background: #25181f; color: #ffbbc0; }
+    :root[data-theme="dark"] .ai-status, :root[data-theme="dark"] .theme-select { border-color: #344159; background: #111b2b; color: #d2dced; }
+    :root[data-theme="dark"] .ai-status.ready { border-color: #28523f; background: #10231b; color: #a8e7c8; }
+    :root[data-theme="dark"] .ai-status.error { border-color: #653d46; background: #25181f; color: #ffb5bc; }
+    :root[data-theme="dark"] .btn.secondary { border-color: #35445e; background: #19263c; color: #dce7fb; }
+    :root[data-theme="dark"] .btn.ghost, :root[data-theme="dark"] .icon-button, :root[data-theme="dark"] .sidebar-toggle { border-color: #344159; background: #111b2b; color: #d2dced; }
+    :root[data-theme="dark"] .btn.ghost:hover, :root[data-theme="dark"] .sidebar-toggle:hover { background: #202d43; }
+    :root[data-theme="dark"] .answer-option, :root[data-theme="dark"] .career-tabs, :root[data-theme="dark"] .career-fact { border-color: #2b394f; background: #111b2b; color: #d5dfef; }
+    :root[data-theme="dark"] .answer-option:hover, :root[data-theme="dark"] .career-tab:hover { background: #19263c; color: #e8effb; }
+    :root[data-theme="dark"] .schedule-table th, :root[data-theme="dark"] .schedule-table td, :root[data-theme="dark"] .activity-chart, :root[data-theme="dark"] .exam-plan { border-color: #263247; }
+    :root[data-theme="dark"] .schedule-table tbody tr:hover { background: #141e30; }
+    :root[data-theme="dark"] .career-hero { border-color: #343451; background: linear-gradient(135deg,#151a2b,#17172b); }
+    :root[data-theme="dark"] .career-card, :root[data-theme="dark"] .career-detail { border-color: #263247; background: #101827; }
+    :root[data-theme="dark"] .career-reason { background: #20203b; color: #c4c4ff !important; }
+    :root[data-theme="dark"] .career-check, :root[data-theme="dark"] .career-plan-row { border-color: #2b394f; }
+    :root[data-theme="dark"] .exam-badge, :root[data-theme="dark"] .exam-empty, :root[data-theme="dark"] .empty-card { border-color: #2b394f; background: #111b2b; color: #b0bdd1; }
+    :root[data-theme="dark"] .exam-badge.warn { border-color: #5b4828; background: #282114; color: #f2d28e; }
+    :root[data-theme="dark"] .exam-badge.verified { border-color: #28523f; background: #10231b; color: #a8e7c8; }
+    :root[data-theme="dark"] .mobile-bar { border-color: #263247 !important; background: rgba(12,20,34,.96) !important; }
+    :root[data-theme="dark"] .mobile-nav { color: #a2afc3; }
+    :root[data-theme="dark"] .mobile-nav.active { background: #192a48 !important; color: #b9d0ff !important; }
+    :root[data-theme="dark"] .mobile-menu, :root[data-theme="dark"] .search-results { border-color: #344159 !important; background: #101827 !important; }
+    :root[data-theme="dark"] .mobile-menu button, :root[data-theme="dark"] .search-results button { color: #d2dced !important; }
+    :root[data-theme="dark"] .mobile-menu button:hover, :root[data-theme="dark"] .search-results button:hover { background: #19263c !important; color: #e8effb !important; }
+    :root[data-theme="dark"] .confirmation { border-color: #344159; background: #101827; color: #edf3ff; }
+    :root[data-theme="dark"] .confirmation p { color: #a2afc3; }
+    @media (max-width: 500px) {
+      .theme-control > span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+      .theme-select { min-width: 78px; max-width: 82px; padding-inline: 6px 20px; font-size: 10px; }
+    }
+    @media (max-width: 600px) {
+      .exam-stats { gap: 8px; }
+      .exam-stat { padding: 12px; }
+      .exam-stat strong { font-size: 19px; }
+      .exam-filters { grid-template-columns: 1fr 1fr; }
+      .exam-filters .wide { grid-column: 1 / -1; }
+      .exam-form-grid { grid-template-columns: 1fr; }
+      .exam-form-grid .wide { grid-column: auto; }
+      .exam-card { padding: 14px; }
+      .career-grid, .career-facts, .career-compare { grid-template-columns: 1fr; }
+      .career-check-grid { grid-template-columns: repeat(2,minmax(0,1fr)); }
+      .career-tabs { overflow-x: auto; flex-wrap: nowrap; }
+      .career-tab { flex: 0 0 auto; }
+    }
+    @media (max-width: 320px) {
+      body { min-width: 0; }
+    }
+  </style>
+  <script>
+    (() => {
+      try {
+        const preference = localStorage.getItem("studyorbit.theme.v1");
+        const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.dataset.theme = preference === "dark" || (preference === "system" && systemDark) ? "dark" : "light";
+      } catch (error) {
+        console.error("Could not restore the StudyOrbit theme preference.", error);
+        document.documentElement.dataset.theme = "light";
+      }
+    })();
+  </script>
+</head>
+<body>
+  <section id="welcomeScreen" class="welcome-screen">
+    <div class="welcome-copy">
+      <div class="brand"><span class="brand-mark">✳</span> StudyOrbit</div>
+      <div class="eyebrow" style="margin-top:35px">A little more clarity, every day</div>
+      <h1>Make learning<br>feel <span>lighter.</span></h1>
+      <p>Your personal space to ask questions, make study tools, understand assignments, and build a routine that works for you.</p>
+      <div class="feature-list">
+        <div class="feature-item"><span class="feature-icon">✦</span>Break tough topics down</div>
+        <div class="feature-item"><span class="feature-icon">▤</span>Study with flashcards &amp; quizzes</div>
+        <div class="feature-item"><span class="feature-icon">◷</span>Make time for what matters</div>
+        <div class="feature-item"><span class="feature-icon">◎</span>Go at your own pace</div>
+      </div>
+    </div>
+    <form id="welcomeForm" class="welcome-form">
+      <h2>Let's get to know you</h2>
+      <p>A few details help us make your study space feel like yours.</p>
+      <div class="stack">
+        <div class="field">
+          <label>I’m joining as</label>
+          <div class="role-options">
+            <label class="role-option"><input type="radio" name="role" value="School student" checked><span>School<br>student</span></label>
+            <label class="role-option"><input type="radio" name="role" value="College student"><span>College<br>student</span></label>
+            <label class="role-option"><input type="radio" name="role" value="Other"><span>Other<br>(teacher, curious mind…)</span></label>
+          </div>
+        </div>
+        <div class="form-grid">
+          <div class="field"><label for="profileName">Your name</label><input id="profileName" name="name" placeholder="e.g. Alex Morgan" autocomplete="name" required maxlength="50"></div>
+          <div class="field"><label for="profileAge">Age</label><input id="profileAge" name="age" type="number" min="5" max="120" placeholder="16" required></div>
+        </div>
+        <div class="field"><label for="institution">School / college (optional)</label><input id="institution" name="institution" placeholder="Where do you study?"></div>
+        <div class="field">
+          <label for="levelSelect">What are you studying?</label>
+          <select id="levelSelect" name="level">
+            <optgroup label="School"><option>Class 1</option><option>Class 2</option><option>Class 3</option><option>Class 4</option><option>Class 5</option><option>Class 6</option><option>Class 7</option><option>Class 8</option><option>Class 9</option><option>Class 10</option><option>Class 11</option><option selected>Class 12</option></optgroup>
+            <optgroup label="College"><option>College — Year 1</option><option>College — Year 2</option><option>College — Year 3</option><option>College — Year 4+</option></optgroup>
+            <optgroup label="Other"><option>PhD / research</option><option>Other / lifelong learner</option><option>Teaching</option></optgroup>
+          </select>
+        </div>
+        <button class="btn" type="submit">Create my study space <span aria-hidden="true">→</span></button>
+      </div>
+      <p class="fine-print">Your study data is saved to a local database and cached in this browser. This prototype has no accounts or cross-device sync. AI requests send your topic and question to the StudyOrbit server and configured AI provider; your name, age, and school are not included.</p>
+    </form>
+  </section>
+
+  <div id="appShell" class="app-shell hidden">
+    <aside class="sidebar">
+      <div class="brand"><span class="brand-mark">✳</span><span class="brand-name">StudyOrbit</span><button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Collapse sidebar" aria-pressed="false" title="Collapse sidebar">‹</button></div>
+      <nav class="sidebar-scroll" aria-label="Main navigation">
+        <div class="nav-list">
+          <button class="nav-item active" data-page="home"><span class="nav-symbol" aria-hidden="true">⌂</span><span class="nav-text">Overview</span></button>
+        </div>
+        <div class="nav-label">Your learning tools</div>
+        <div class="nav-list">
+          <button class="nav-item" data-page="doubt" title="Doubt clearer"><span class="nav-symbol" aria-hidden="true">✧</span><span class="nav-text">Doubt clearer</span></button>
+          <button class="nav-item" data-page="flashcards" title="Flashcard maker"><span class="nav-symbol" aria-hidden="true">▤</span><span class="nav-text">Flashcard maker</span></button>
+          <button class="nav-item" data-page="quiz" title="Quiz"><span class="nav-symbol" aria-hidden="true">☑</span><span class="nav-text">Quiz</span></button>
+          <button class="nav-item" data-page="facts" title="Fun facts"><span class="nav-symbol" aria-hidden="true">✴</span><span class="nav-text">Fun facts</span></button>
+          <button class="nav-item" data-page="analyze" title="Analyze material"><span class="nav-symbol" aria-hidden="true">⌕</span><span class="nav-text">Analyze material</span></button>
+          <button class="nav-item" data-page="homework" title="Homework help"><span class="nav-symbol" aria-hidden="true">✎</span><span class="nav-text">Homework help</span></button>
+        </div>
+        <div class="nav-label">Your routine</div>
+        <div class="nav-list">
+          <button class="nav-item" data-page="timetable" title="Time table"><span class="nav-symbol" aria-hidden="true">▦</span><span class="nav-text">Time table</span></button>
+          <button class="nav-item" data-page="teachers" title="Teachers"><span class="nav-symbol" aria-hidden="true">♧</span><span class="nav-text">Teachers</span></button>
+          <button class="nav-item" data-page="selfstudy" title="Self study"><span class="nav-symbol" aria-hidden="true">◷</span><span class="nav-text">Self study</span></button>
+          <button class="nav-item" data-page="daily" title="Daily score"><span class="nav-symbol" aria-hidden="true">◉</span><span class="nav-text">Daily score</span></button>
+          <button class="nav-item" data-page="exams" title="Exam center"><span class="nav-symbol" aria-hidden="true">✧</span><span class="nav-text">Exam center</span></button>
+          <button class="nav-item" data-page="career" title="Career navigator"><span class="nav-symbol" aria-hidden="true">⌖</span><span class="nav-text">Career navigator</span></button>
+        </div>
+      </nav>
+      <div class="sidebar-bottom">
+        <button id="resetProfile" class="nav-item" title="Edit your profile"><span class="nav-symbol" aria-hidden="true">⚙</span><span class="nav-text">Edit your profile</span></button>
+        <button id="signOut" class="nav-item" title="Sign out of this local profile"><span class="nav-symbol" aria-hidden="true">⇥</span><span class="nav-text">Sign out</span></button>
+        <div class="profile-mini"><span class="avatar" id="sidebarAvatar">A</span><span class="profile-copy"><strong id="sidebarName">Student</strong><small id="sidebarLevel">Class 12</small></span></div>
+      </div>
+    </aside>
+    <nav class="mobile-bar" aria-label="Mobile navigation">
+      <button class="mobile-nav active" data-page="home"><span>⌂</span><span>Home</span></button>
+      <button class="mobile-nav" data-page="doubt"><span>✧</span><span>Doubts</span></button>
+      <button class="mobile-nav" data-page="flashcards"><span>▤</span><span>Cards</span></button>
+      <button class="mobile-nav" data-page="quiz"><span>☑</span><span>Quiz</span></button>
+      <button class="mobile-nav" data-page="daily"><span>◉</span><span>Daily</span></button>
+      <button class="mobile-nav" id="mobileMore" aria-expanded="false" aria-controls="mobileMenu"><span>☰</span><span>More</span></button>
+      <div id="mobileMenu" class="mobile-menu hidden">
+        <button data-page="facts">✴ &nbsp; Fun facts</button>
+        <button data-page="analyze">⌕ &nbsp; Analyze material</button>
+        <button data-page="homework">✎ &nbsp; Homework help</button>
+        <button data-page="timetable">▦ &nbsp; Time table</button>
+        <button data-page="teachers">♧ &nbsp; Teachers</button>
+        <button data-page="selfstudy">◷ &nbsp; Self study</button>
+        <button data-page="exams">✧ &nbsp; Exam center</button>
+        <button data-page="career">⌖ &nbsp; Career navigator</button>
+        <button id="mobileSignOut">⇥ &nbsp; Sign out</button>
+      </div>
+    </nav>
+    <main class="main-area">
+      <header class="topbar">
+        <div class="breadcrumb">Study space <span aria-hidden="true">/</span> <strong id="crumbTitle">Overview</strong></div>
+        <div class="topbar-right">
+          <div class="nav-search-wrap"><label for="navSearch" class="hidden">Search study tools</label><input id="navSearch" class="nav-search" type="search" placeholder="Find a tool…" autocomplete="off" aria-controls="searchResults" aria-expanded="false"><div id="searchResults" class="search-results hidden" role="listbox" aria-label="Search results"></div></div>
+          <label class="muted" for="subjectSelect" style="font-size:11px">Subject</label>
+          <select id="subjectSelect" class="subject-select" aria-label="Choose a subject">
+            <option>Mathematics</option><option>Physics</option><option>Chemistry</option><option>Biology</option><option>English</option><option>History</option><option>Computer Science</option><option>Other</option>
+          </select>
+          <label class="theme-control"><span>Theme</span><select id="themeSelect" class="theme-select" aria-label="Color theme"><option value="light">White</option><option value="dark">Black</option><option value="system">System</option></select></label>
+          <span id="aiStatus" class="ai-status" role="status"><span class="dot"></span> Checking AI</span>
+          <span class="avatar" id="topAvatar">A</span>
+        </div>
+      </header>
+      <div id="pageContent" class="content"></div>
+    </main>
+  </div>
+  <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
+  <dialog id="confirmDialog" class="confirmation">
+    <form method="dialog" style="padding:22px">
+      <h2 id="confirmTitle">Remove this session?</h2>
+      <p id="confirmMessage">This change will update your weekly plan.</p>
+      <div class="row" style="justify-content:flex-end;margin-top:18px">
+        <button class="btn ghost" value="cancel">Keep it</button>
+        <button id="confirmAccept" class="btn" value="confirm">Remove session</button>
+      </div>
+    </form>
+  </dialog>
+  <script>
+    (() => {
+      "use strict";
+      const PROFILE_KEY = "studyorbit.profile.v1";
+      const DATA_KEY = "studyorbit.data.v1";
+      const THEME_KEY = "studyorbit.theme.v1";
+      const subjectOptions = ["Mathematics", "Physics", "Chemistry", "Biology", "English", "History", "Computer Science", "Other"];
+      const pageNames = {
+        home: "Overview", doubt: "Doubt clearer", flashcards: "Flashcard maker", quiz: "Quiz",
+        facts: "Fun facts", analyze: "Analyze material", homework: "Homework help",
+        timetable: "Time table", teachers: "Teachers", selfstudy: "Self study", daily: "Daily score",
+        exams: "Exam center", career: "Career navigator"
+      };
+      const icons = { Mathematics: "∑", Physics: "⌁", Chemistry: "⚗", Biology: "♧", English: "Aa", History: "◷", "Computer Science": "⌘", Other: "✦" };
+      const defaultData = {
+        subject: "Mathematics", lastTopic: "", lastStudied: "", schedules: { timetable: [], teachers: [], selfstudy: [] },
+        streak: 0, lastDaily: "", dailyScore: null, dailyHistory: [], studyLog: [], exams: [], examPlans: {}, examProgress: {},
+        careerProfile: null, careerPlans: [], savedCareers: []
+      };
+      let profile = null;
+      let data = { ...defaultData, schedules: { ...defaultData.schedules } };
+      let currentPage = "home";
+      let activeCards = [];
+      let cardIndex = 0;
+      let showingAnswer = false;
+      let quizState = null;
+      let dailyState = null;
+      let toastTimer = 0;
+      let databaseSyncTimer = 0;
+      let databaseSyncQueue = Promise.resolve();
+      let databaseSyncReady = false;
+      let databaseSyncWarningShown = false;
+      let topicToAsk = "";
+      let pendingConfirmation = null;
+      let searchSelection = -1;
+      let editingExamId = "";
+      let examPlanId = "";
+      let examPlanDays = 7;
+      let themePreference = "light";
+      const $ = (selector, root = document) => root.querySelector(selector);
+      const $$ = (selector, root = document) => Array.from(root.querySelectorAll(selector));
+      const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
+      const dateKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
+      const todayKey = () => dateKey();
+      const loadJson = (key) => {
+        try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; }
+        catch (error) { console.error("Could not read saved StudyOrbit data.", error); return null; }
+      };
+      const persist = () => {
+        try {
+          localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+          localStorage.setItem(DATA_KEY, JSON.stringify(data));
+        } catch (error) {
+          console.error("Could not save StudyOrbit data.", error);
+          showToast("Your browser couldn't save this change. Check your storage settings.");
+        }
+        if (!databaseSyncReady) return;
+        window.clearTimeout(databaseSyncTimer);
+        databaseSyncTimer = window.setTimeout(() => {
+          const snapshot = JSON.stringify({ profile, data });
+          databaseSyncQueue = databaseSyncQueue.then(async () => {
+            const response = await fetch("/api/data", {
+              method: "PUT",
+              headers: { "content-type": "application/json" },
+              credentials: "same-origin",
+              body: snapshot
+            });
+            if (!response.ok) throw new Error(`Database save returned HTTP ${response.status}.`);
+            databaseSyncWarningShown = false;
+          }).catch((error) => {
+            console.error("Could not sync StudyOrbit data to the local database.", error);
+            if (!databaseSyncWarningShown) {
+              showToast("Your change is saved in this browser, but could not sync to the local database.");
+              databaseSyncWarningShown = true;
+            }
+          });
+        }, 350);
+      };
+      const showToast = (message) => {
+        const toast = $("#toast");
+        toast.textContent = message;
+        toast.classList.remove("hidden");
+        window.clearTimeout(toastTimer);
+        toastTimer = window.setTimeout(() => toast.classList.add("hidden"), 3000);
+      };
+      const setAIStatus = (state, message) => {
+        const status = $("#aiStatus");
+        if (!status) return;
+        status.className = `ai-status${state ? ` ${state}` : ""}`;
+        status.replaceChildren();
+        const dot = document.createElement("span");
+        dot.className = "dot";
+        status.append(dot, document.createTextNode(message));
+      };
+      const applyTheme = (preference) => {
+        const normalized = ["light", "dark", "system"].includes(preference) ? preference : "light";
+        themePreference = normalized;
+        let dark = normalized === "dark";
+        if (normalized === "system") dark = window.matchMedia("(prefers-color-scheme: dark)").matches;
+        document.documentElement.dataset.theme = dark ? "dark" : "light";
+        document.querySelector('meta[name="theme-color"]').content = dark ? "#080d18" : "#f5f6fb";
+        $("#themeSelect").value = normalized;
+        try {
+          localStorage.setItem(THEME_KEY, normalized);
+        } catch (error) {
+          console.error("Could not save the StudyOrbit theme preference.", error);
+          showToast("Your theme changed, but the preference could not be saved.");
+        }
+      };
+      $("#themeSelect").addEventListener("change", (event) => applyTheme(event.target.value));
+      const colorSchemePreference = window.matchMedia("(prefers-color-scheme: dark)");
+      colorSchemePreference.addEventListener("change", () => {
+        if (themePreference === "system") applyTheme("system");
+      });
+      try {
+        applyTheme(localStorage.getItem(THEME_KEY) || "light");
+      } catch (error) {
+        console.error("Could not read the StudyOrbit theme preference.", error);
+        applyTheme("light");
+      }
+      const closeSearch = () => {
+        const results = $("#searchResults");
+        results.classList.add("hidden");
+        results.replaceChildren();
+        $("#navSearch").setAttribute("aria-expanded", "false");
+        searchSelection = -1;
+      };
+      const updateSearch = () => {
+        const input = $("#navSearch");
+        const query = input.value.trim().toLowerCase();
+        const results = $("#searchResults");
+        results.replaceChildren();
+        searchSelection = -1;
+        if (!query) { closeSearch(); return; }
+        const matches = Object.entries(pageNames).filter(([, name]) => name.toLowerCase().includes(query)).slice(0, 6);
+        if (!matches.length) {
+          const empty = document.createElement("div");
+          empty.className = "search-hint";
+          empty.textContent = "No tools found. Try “quiz” or “schedule”.";
+          results.append(empty);
+        } else {
+          for (const [page, name] of matches) {
+            const button = document.createElement("button");
+            button.type = "button";
+            button.setAttribute("role", "option");
+            button.dataset.page = page;
+            button.innerHTML = `<span aria-hidden="true">${page === "home" ? "⌂" : page === "doubt" ? "✧" : page === "flashcards" ? "▤" : page === "quiz" ? "☑" : page === "facts" ? "✴" : page === "analyze" ? "⌕" : page === "homework" ? "✎" : "◷"}</span>${escapeHTML(name)}`;
+            results.append(button);
+          }
+        }
+        results.classList.remove("hidden");
+        input.setAttribute("aria-expanded", "true");
+      };
+      const confirmAction = (title, message, actionLabel, action) => {
+        const dialog = $("#confirmDialog");
+        $("#confirmTitle").textContent = title;
+        $("#confirmMessage").textContent = message;
+        $("#confirmAccept").textContent = actionLabel;
+        pendingConfirmation = action;
+        dialog.showModal();
+      };
+      const displayAIText = (target, text, isError = false) => {
+        if (!target?.isConnected) return;
+        target.replaceChildren();
+        target.classList.toggle("ai-error", isError);
+        target.setAttribute("aria-live", "polite");
+        target.setAttribute("aria-atomic", "true");
+        target.setAttribute("role", isError ? "alert" : "status");
+        const output = document.createElement("div");
+        output.className = "ai-output";
+        output.textContent = text;
+        target.append(output);
+      };
+      const requestAI = async (path, body) => {
+        if (body instanceof FormData) body.append("learnerLevel", profile?.level || "");
+        else body.learnerLevel = profile?.level || "";
+        let response;
+        try {
+          response = await fetch(path, {
+            method: "POST",
+            headers: body instanceof FormData ? undefined : { "content-type": "application/json" },
+            body: body instanceof FormData ? body : JSON.stringify(body)
+          });
+        } catch (error) {
+          if (location.protocol === "file:") throw new Error("Start the StudyOrbit server with `npm start`, then open http://127.0.0.1:3000.");
+          throw new Error("Could not reach the StudyOrbit server. Check that it is running and try again.");
+        }
+        const contentType = response.headers.get("content-type") || "";
+        if (response.status === 404 || response.status === 405 || !contentType.includes("application/json")) {
+          throw new Error("This page is running on a static preview, which cannot run AI tools. Start StudyOrbit with `npm start` and open http://127.0.0.1:3001 (not the :5500 Live Server page).");
+        }
+        let payload;
+        try { payload = await response.json(); }
+        catch { throw new Error("The StudyOrbit server returned an unreadable response."); }
+        if (!response.ok) throw new Error(payload.error || `Request failed (${response.status}).`);
+        return payload;
+      };
+      const runAI = async (form, target, busyLabel, operation) => {
+        const button = form?.matches("button") ? form : form?.querySelector('button[type="submit"]');
+        const oldLabel = button?.textContent || "";
+        if (button) { button.disabled = true; button.textContent = busyLabel; }
+        form?.setAttribute("aria-busy", "true");
+        if (target) displayAIText(target, "Thinking through this with your AI tutor…");
+        try {
+          const result = await operation();
+          return result;
+        } catch (error) {
+          if (target) displayAIText(target, error.message || "The AI request failed. Please try again.", true);
+          showToast(error.message || "The AI request failed. Please try again.");
+          return null;
+        } finally {
+          if (button?.isConnected) { button.disabled = false; button.textContent = oldLabel; }
+          form?.removeAttribute("aria-busy");
+        }
+      };
+      const refreshAIStatus = async () => {
+        try {
+          const response = await fetch("/api/health");
+          const contentType = response.headers.get("content-type") || "";
+          if (response.status === 404 || response.status === 405 || !contentType.includes("application/json")) {
+            setAIStatus("error", "Open app server on :3001");
+            $("#aiStatus").title = "Live Server and the Next.js landing page do not provide the AI backend. Start the root app with `npm start` and open http://127.0.0.1:3001.";
+            return;
+          }
+          if (!response.ok) throw new Error("Server health check failed.");
+          const health = await response.json();
+          setAIStatus(health.configured ? "ready" : "error", health.configured ? `AI key configured · ${health.model}` : "AI setup required");
+          $("#aiStatus").title = health.configured
+            ? "An API key is configured. Provider access and available usage are confirmed when you submit a request."
+            : "Add GEMINI_API_KEY to .env and restart StudyOrbit.";
+        } catch {
+          setAIStatus("error", "Backend unavailable");
+          $("#aiStatus").title = "Start the root StudyOrbit app with `npm start` and open the URL shown in the terminal.";
+        }
+      };
+      const sampleVideoFrames = async (file) => {
+        if (file.size > 60 * 1024 * 1024) throw new Error("Choose a video smaller than 60 MB to sample frames in your browser.");
+        const objectUrl = URL.createObjectURL(file);
+        const video = document.createElement("video");
+        video.preload = "metadata";
+        video.muted = true;
+        video.playsInline = true;
+        video.src = objectUrl;
+        try {
+          await new Promise((resolve, reject) => {
+            video.addEventListener("loadedmetadata", resolve, { once: true });
+            video.addEventListener("error", () => reject(new Error("This video format could not be opened in your browser.")), { once: true });
+          });
+          if (!Number.isFinite(video.duration) || video.duration <= 0) throw new Error("This video does not have a readable duration.");
+          const count = Math.min(6, Math.max(1, Math.ceil(video.duration / 30)));
+          const canvas = document.createElement("canvas");
+          canvas.width = Math.min(960, video.videoWidth);
+          canvas.height = Math.round(video.videoHeight * canvas.width / video.videoWidth);
+          const context = canvas.getContext("2d");
+          if (!context) throw new Error("Your browser could not prepare video frames.");
+          const frames = [];
+          for (let index = 0; index < count; index++) {
+            const seconds = (video.duration * (index + 1)) / (count + 1);
+            await new Promise((resolve, reject) => {
+              const timer = window.setTimeout(() => reject(new Error("Seeking this video took too long. Try another file.")), 10_000);
+              video.addEventListener("seeked", () => { window.clearTimeout(timer); resolve(); }, { once: true });
+              video.currentTime = seconds;
+            });
+            context.drawImage(video, 0, 0, canvas.width, canvas.height);
+            const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.78));
+            if (!blob) throw new Error("Your browser could not extract a frame from this video.");
+            const timestamp = `${seconds.toFixed(1)}s`;
+            frames.push({ file: new File([blob], `video-frame-${String(index + 1).padStart(2, "0")}.jpg`, { type: "image/jpeg" }), timestamp });
+          }
+          return frames;
+        } finally {
+          video.removeAttribute("src");
+          video.load();
+          URL.revokeObjectURL(objectUrl);
+        }
+      };
+      const prettyDate = (date = new Date()) => date.toLocaleDateString(undefined, { weekday: "long", month: "long", day: "numeric" });
+      const selectedSubject = () => $("#subjectSelect").value || data.subject || "Mathematics";
+      const recordTopic = (topic, subject = selectedSubject()) => {
+        const cleaned = String(topic || "").trim().slice(0, 100);
+        if (!cleaned) return;
+        data.lastTopic = cleaned;
+        data.lastStudied = subject;
+        data.studyLog = Array.isArray(data.studyLog) ? data.studyLog : [];
+        if (!data.studyLog.some((entry) => entry.date === todayKey() && entry.topic === cleaned && entry.subject === subject)) {
+          data.studyLog.push({ date: todayKey(), topic: cleaned, subject });
+        }
+        persist();
+      };
+      const previousStudyTopics = () => {
+        const yesterday = new Date();
+        yesterday.setDate(yesterday.getDate() - 1);
+        return (data.studyLog || []).filter((item) => item.date === dateKey(yesterday));
+      };
+      const enterApp = () => {
+        $("#welcomeScreen").classList.add("hidden");
+        $("#appShell").classList.remove("hidden");
+        $("#sidebarName").textContent = profile.name;
+        $("#sidebarLevel").textContent = profile.level;
+        $("#sidebarAvatar").textContent = profile.name.trim().charAt(0).toUpperCase();
+        $("#topAvatar").textContent = profile.name.trim().charAt(0).toUpperCase();
+        $("#subjectSelect").value = data.subject;
+        const collapsed = loadJson("studyorbit.sidebar-collapsed.v1") === true;
+        $("#appShell").classList.toggle("sidebar-collapsed", collapsed);
+        $("#sidebarToggle").setAttribute("aria-pressed", String(collapsed));
+        $("#sidebarToggle").setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+        $("#sidebarToggle").title = collapsed ? "Expand sidebar" : "Collapse sidebar";
+        renderPage();
+      };
+      const signOutLocalProfile = async () => {
+        if (!databaseSyncReady) {
+          showToast("StudyOrbit could not confirm the local save service. Your profile was not signed out.");
+          return;
+        }
+        window.clearTimeout(databaseSyncTimer);
+        await databaseSyncQueue;
+        try {
+          const response = await fetch("/api/data", {
+            method: "PUT",
+            headers: { "content-type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ profile: null, data })
+          });
+          if (!response.ok) throw new Error(`Profile sign-out returned HTTP ${response.status}.`);
+          localStorage.setItem(PROFILE_KEY, "null");
+          profile = null;
+          currentPage = "home";
+          activeCards = [];
+          cardIndex = 0;
+          showingAnswer = false;
+          quizState = null;
+          dailyState = null;
+          generatedFacts = null;
+          counsellorResponse = "";
+          careerSection = "home";
+          topicToAsk = "";
+          $("#welcomeForm").reset();
+          $("#welcomeForm button[type='submit']").innerHTML = "Create my study space <span aria-hidden=\"true\">→</span>";
+          $("#welcomeScreen").classList.remove("hidden");
+          $("#appShell").classList.add("hidden");
+          showToast("Signed out of this local profile. Study data remains saved in this browser; this app has no account authentication.");
+        } catch (error) {
+          console.error("Could not sign out of the local StudyOrbit profile.", error);
+          showToast("Could not sign out because the local save service failed. Please try again.");
+        }
+      };
+      const setPage = (page) => {
+        if (!pageNames[page]) return;
+        currentPage = page;
+        $$(".nav-item[data-page], .mobile-nav[data-page]").forEach((item) => {
+          item.classList.toggle("active", item.dataset.page === page);
+          if (item.dataset.page === page) item.setAttribute("aria-current", "page");
+          else item.removeAttribute("aria-current");
+        });
+        $("#mobileMore").classList.toggle("active", !["home", "doubt", "flashcards", "quiz", "daily"].includes(page));
+        $("#crumbTitle").textContent = pageNames[page];
+        renderPage();
+        $("#navSearch").value = "";
+        closeSearch();
+        window.scrollTo({ top: 0, behavior: "smooth" });
+      };
+      const pageHeading = (title, subtitle, action = "") => `
+        <div class="page-heading"><div><div class="eyebrow">${escapeHTML(pageNames[currentPage])}</div><h1>${title}</h1><p>${subtitle}</p></div>${action}</div>`;
+      const card = (title, body, className = "") => `<section class="card card-pad ${className}"><h2 class="section-title">${title}</h2>${body}</section>`;
+      const demoNotice = "AI explanations can make mistakes. Verify important details with your class materials.";
+      let generatedFacts = null;
+      const topicPrompt = (id = "topicInput", value = data.lastTopic) => `
+        <div class="field"><label for="${id}">Topic to study</label><input id="${id}" value="${escapeHTML(value)}" placeholder="e.g. Newton's laws of motion" maxlength="100" required></div>`;
+      const dashboardActivity = () => {
+        const today = new Date();
+        const log = Array.isArray(data.studyLog) ? data.studyLog : [];
+        const week = [];
+        for (let offset = 6; offset >= 0; offset--) {
+          const date = new Date(today.getFullYear(), today.getMonth(), today.getDate() - offset);
+          const key = dateKey(date);
+          const count = log.filter((entry) => entry.date === key).length;
+          week.push({
+            key,
+            count,
+            label: offset === 0 ? "Today" : date.toLocaleDateString(undefined, { weekday: "short" })
+          });
+        }
+        const max = Math.max(...week.map((day) => day.count), 1);
+        return `<div class="activity-chart" role="img" aria-label="Study topics saved per day over the last seven days">
+          ${week.map((day, index) => `<div class="activity-day" aria-label="${escapeHTML(day.label)}: ${day.count} topic${day.count === 1 ? "" : "s"}"><span class="activity-count">${day.count || "—"}</span><div class="activity-bar-track"><span class="activity-bar" style="height:${day.count ? Math.max(9, (day.count / max) * 100) : 3}%;animation-delay:${index * 45}ms"></span></div><span class="activity-label">${escapeHTML(day.label)}</span></div>`).join("")}
+        </div>`;
+      };
+      const nextScheduledItem = () => {
+        const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+        const now = new Date();
+        const todayIndex = (now.getDay() + 6) % 7;
+        const upcoming = [];
+        for (const [kind, entries] of Object.entries(data.schedules || {})) {
+          if (!Array.isArray(entries)) continue;
+          for (const entry of entries) {
+            const scheduledDay = dayOrder.indexOf(entry.day);
+            if (scheduledDay < 0 || !/^\d{2}:\d{2}$/.test(entry.time)) continue;
+            let daysUntil = (scheduledDay - todayIndex + 7) % 7;
+            const [hour, minute] = entry.time.split(":").map(Number);
+            const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntil, hour, minute);
+            if (date <= now) {
+              daysUntil += 7;
+              date.setDate(date.getDate() + 7);
+            }
+            upcoming.push({ entry, kind, date, daysUntil });
+          }
+        }
+        return upcoming.sort((a, b) => a.date - b.date)[0] || null;
+      };
+      const renderHome = () => {
+        const firstName = escapeHTML(profile.name.split(/\s+/)[0]);
+        const todayScore = data.lastDaily === todayKey() ? data.dailyScore : null;
+        const lastTopic = data.lastTopic
+          ? `<span class="tag"><span class="dot"></span> Pick up where you left off</span><h2>Ready to keep exploring, ${firstName}?</h2><p>Your recent topic was <strong>${escapeHTML(data.lastTopic)}</strong>. Turn it into flashcards or ask another question.</p><div class="hero-actions"><button class="btn" data-page="flashcards">Make flashcards <span aria-hidden="true">→</span></button><button class="btn secondary" data-page="doubt">Ask a follow-up</button></div>`
+          : `<span class="tag"><span class="dot"></span> Your study space is ready</span><h2>Small steps add up, ${firstName}.</h2><p>Choose a subject, bring a question, or set up a study session. We’ll keep your tools and routine together.</p><div class="hero-actions"><button class="btn" data-page="doubt">Clear a doubt <span aria-hidden="true">→</span></button><button class="btn secondary" data-page="selfstudy">Plan study time</button></div>`;
+        const subjects = ["Mathematics", "Physics", "Chemistry", "Biology", "English", "Computer Science"];
+        const recentTopics = (Array.isArray(data.studyLog) ? data.studyLog : []).slice().reverse().slice(0, 4);
+        const nextSession = nextScheduledItem();
+        const nextExam = data.exams.map((exam) => ({ exam, days: examDaysUntil(exam.examDate) }))
+          .filter(({ days }) => days != null && days >= 0).sort((a, b) => a.days - b.days)[0];
+        const upcomingMarkup = nextSession
+          ? `<div class="activity-item"><span class="activity-icon">◷</span><span class="grow"><strong>${escapeHTML(nextSession.entry.topic)}</strong><small>${escapeHTML(nextSession.kind === "teachers" ? "Teacher session" : nextSession.kind === "timetable" ? "Class time" : "Self study")} · ${escapeHTML(nextSession.entry.day)} at ${escapeHTML(nextSession.entry.time)}</small></span><span class="tag">${nextSession.daysUntil === 0 ? "Today" : nextSession.daysUntil === 1 ? "Tomorrow" : nextSession.entry.day}</span></div>`
+          : `<div class="empty-card"><strong>Your calendar is clear</strong><span>Add class, teacher, or self-study time to plan your week.</span><button class="btn ghost small" style="justify-self:center;margin-top:7px" data-page="selfstudy">Plan a session</button></div>`;
+        const nextExamMarkup = nextExam
+          ? `<div class="activity-item"><span class="activity-icon">✧</span><span class="grow"><strong>${escapeHTML(nextExam.exam.name)}</strong><small>${escapeHTML(examDateLabel(nextExam.exam.examDate, "Not Announced"))}</small></span><span class="tag">${nextExam.days === 0 ? "Today" : `${nextExam.days}d`}</span></div>`
+          : `<div class="empty-card"><strong>No dated exams yet</strong><span>Track an upcoming exam and prepare at your pace.</span><button class="btn ghost small" style="justify-self:center;margin-top:7px" data-page="exams">Open exam center</button></div>`;
+        const recentMarkup = recentTopics.length
+          ? `<div class="activity-list">${recentTopics.map((entry) => `<button class="activity-item" data-open-topic="${escapeHTML(entry.topic)}" title="Ask about ${escapeHTML(entry.topic)}"><span class="activity-icon">✧</span><span class="grow" style="min-width:0"><strong>${escapeHTML(entry.topic)}</strong><small>${escapeHTML(entry.subject)} · ${entry.date === todayKey() ? "Today" : escapeHTML(entry.date)}</small></span><span aria-hidden="true">→</span></button>`).join("")}</div>`
+          : `<div class="empty-card"><strong>Your learning history starts here</strong><span>Study a topic and it’ll show up here.</span><button class="btn ghost small" style="justify-self:center;margin-top:7px" data-page="doubt">Explore a topic</button></div>`;
+        return `
+          ${pageHeading(`Good ${new Date().getHours() < 12 ? "morning" : new Date().getHours() < 18 ? "afternoon" : "evening"}, ${firstName}`, prettyDate())}
+          <section class="hero-card">${lastTopic}</section>
+          <div class="grid stats-grid">
+            <section class="card stat-card"><div class="stat-top"><span>Daily streak</span><span class="stat-symbol">♨</span></div><strong>${data.streak} <small>day${data.streak === 1 ? "" : "s"}</small></strong><small>Keep showing up for yourself</small></section>
+            <section class="card stat-card"><div class="stat-top"><span>Today's score</span><span class="stat-symbol">◉</span></div><strong>${todayScore == null ? "—" : `${todayScore}/5`}</strong><small>${todayScore == null ? "Your daily check-in is ready" : "Nice work on your check-in"}</small></section>
+            <section class="card stat-card"><div class="stat-top"><span>Recent topic</span><span class="stat-symbol">✧</span></div><strong style="font-size:16px">${escapeHTML(data.lastTopic || "Not yet")}</strong><small>${escapeHTML(data.lastStudied || "Start with any subject")}</small></section>
+            <section class="card stat-card"><div class="stat-top"><span>Study sessions</span><span class="stat-symbol">◷</span></div><strong>${data.schedules.selfstudy.length}</strong><small>Sessions in your study plan</small></section>
+          </div>
+          <div class="grid home-columns">
+            <section>
+              <div class="section-head"><div><div class="eyebrow">Make it make sense</div><h2 class="section-title" style="margin-top:5px">Choose a subject</h2></div><span class="muted" style="font-size:11px">Your tools use this subject</span></div>
+              <div class="grid subject-grid">${subjects.map((subject) => `<button class="card subject-card" data-subject="${escapeHTML(subject)}"><span class="subject-symbol">${icons[subject] || "✦"}</span><strong>${escapeHTML(subject)}</strong><small>Explore your next topic <span aria-hidden="true">→</span></small></button>`).join("")}</div>
+            </section>
+            <section class="stack">
+              <div><div class="eyebrow">A good place to start</div><h2 class="section-title" style="margin-top:5px; margin-bottom:14px">Quick access</h2></div>
+              <div class="quick-list">
+                <button class="quick-link" data-page="quiz"><span class="quick-icon">☑</span><span><strong>Try a quick quiz</strong><small>Check in on a topic you know</small></span><span class="grow"></span>→</button>
+                <button class="quick-link" data-page="analyze"><span class="quick-icon">⌕</span><span><strong>Make sense of material</strong><small>Bring text or a file to explore</small></span><span class="grow"></span>→</button>
+                <button class="quick-link" data-page="homework"><span class="quick-icon">✎</span><span><strong>Work through homework</strong><small>Understand the process, not just an answer</small></span><span class="grow"></span>→</button>
+                <button class="quick-link" data-page="daily"><span class="quick-icon">◉</span><span><strong>Daily score</strong><small>A five-question practice check-in</small></span><span class="grow"></span>→</button>
+                <button class="quick-link" data-page="exams"><span class="quick-icon">✧</span><span><strong>Exam center</strong><small>Track dates and prepare with practice quizzes</small></span><span class="grow"></span>→</button>
+              </div>
+              <div class="callout"><strong>Your study space, powered by AI</strong><br>Learning requests are sent to the configured AI provider by the StudyOrbit server. Avoid submitting personal or sensitive information.</div>
+            </section>
+          </div>
+          <div class="grid activity-layout">
+            <section class="card card-pad"><div class="section-head"><div><div class="eyebrow">Your last seven days</div><h2 class="section-title" style="margin-top:5px">Study activity</h2></div><span class="tag">Topics explored</span></div>${dashboardActivity()}</section>
+            <div class="stack">
+              <section class="card card-pad"><div class="section-head"><div><div class="eyebrow">Keep your week in view</div><h2 class="section-title" style="margin-top:5px">Coming up</h2></div><button class="btn ghost small" data-page="${nextSession?.kind || "selfstudy"}">View schedule</button></div>${upcomingMarkup}</section>
+              <section class="card card-pad"><div class="section-head"><div><div class="eyebrow">Exam preparation</div><h2 class="section-title" style="margin-top:5px">Next exam</h2></div><button class="btn ghost small" data-page="exams">Exam center</button></div>${nextExamMarkup}</section>
+              <section class="card card-pad"><div class="section-head"><div><div class="eyebrow">Pick up where you left off</div><h2 class="section-title" style="margin-top:5px">Recent topics</h2></div></div>${recentMarkup}</section>
+            </div>
+          </div>`;
+      };
+      const renderDoubt = () => `
+        ${pageHeading("A question is a great place to start.", `Let’s make your ${escapeHTML(selectedSubject())} topic feel clearer, one step at a time.`)}
+        <div class="tool-layout">
+          <section class="card card-pad"><div class="section-head"><h2 class="section-title">What are you wondering about?</h2><span class="tag">${escapeHTML(selectedSubject())}</span></div>
+            <form id="doubtForm" class="tool-form">${topicPrompt("doubtTopic", topicToAsk)}
+              <div class="field"><label for="doubtText">Your question</label><textarea id="doubtText" placeholder="Tell us what feels confusing. You can include what you have tried so far." required maxlength="1200"></textarea></div>
+              <button class="btn" type="submit">Break this down <span aria-hidden="true">→</span></button>
+            </form>
+          </section>
+          <section class="card card-pad"><div class="section-head"><h2 class="section-title">A clearer path</h2><span class="tag">AI tutor</span></div><div id="doubtResponse" class="response-box"><p>Share a question to get a step-by-step explanation with an example.</p><p class="form-note">${demoNotice}</p></div>
+            ${data.lastTopic ? `<button class="btn secondary small" style="margin-top:12px" data-action="make-latest-cards">Generate flashcards from “${escapeHTML(data.lastTopic)}”</button>` : ""}
+          </section>
+        </div>`;
+      const renderFlashcards = () => {
+        const topic = data.lastTopic || "";
+        const cardsHtml = activeCards.length ? `
+          <section class="card card-pad">
+            <div class="section-head"><div><h2 class="section-title">${escapeHTML(topic || "Your flashcards")}</h2><span class="muted" style="font-size:11px">${escapeHTML(selectedSubject())} · Card ${cardIndex + 1} of ${activeCards.length}</span></div><button class="btn ghost small" id="restartCards">Start over</button></div>
+            <div class="progress-track"><div class="progress-fill" style="width:${((cardIndex + 1) / activeCards.length) * 100}%"></div></div>
+            <button class="flashcard" id="flipCard" aria-label="Flip flashcard">
+              <div><span class="eyebrow">${showingAnswer ? "Answer" : "Question"} · click to flip</span><h3>${escapeHTML(showingAnswer ? activeCards[cardIndex].answer : activeCards[cardIndex].question)}</h3><p>${showingAnswer ? "Tap the card to see the question again" : "Think it through, then reveal the answer"}</p></div>
+            </button>
+            <div class="row" style="justify-content:space-between; margin-top:14px"><button id="prevCard" class="btn secondary small" ${cardIndex === 0 ? "disabled" : ""}>← Previous</button><button id="nextCard" class="btn small">${cardIndex === activeCards.length - 1 ? "Finish" : "Next card →"}</button></div>
+          </section>` : `
+          <section class="card card-pad"><h2 class="section-title" style="margin-bottom:15px">Create a small set of cards</h2>
+            <form id="flashcardForm" class="tool-form">${topicPrompt("flashTopic", topic)}
+              <p class="form-note">A topic from Doubt clearer appears here automatically. You can also make cards for a new topic.</p>
+              <button class="btn" type="submit">Create 3 practice cards <span aria-hidden="true">→</span></button>
+            </form>
+          </section>`;
+        return `${pageHeading("Remember the ideas that matter.", "Turn any topic into a quick, low-pressure review.", data.lastTopic ? `<button class="btn secondary" data-page="doubt">Ask about a topic</button>` : "")}
+          <div class="tool-layout">${cardsHtml}
+            <section class="card card-pad"><h2 class="section-title">A little practice goes a long way</h2><p class="muted" style="line-height:1.7">Read the prompt, pause to recall what you know, then flip the card. Even a few minutes of active recall can make revision more meaningful.</p><div class="callout" style="margin-top:15px">${demoNotice}</div></section>
+          </div>`;
+      };
+      const renderQuiz = () => {
+        const activeQuiz = quizState;
+        let body = "";
+        if (activeQuiz) {
+          if (activeQuiz.done) {
+            body = `<div class="response-box"><span class="eyebrow">Practice complete</span><h3 style="margin-top:8px;font-size:22px">${activeQuiz.score} / ${activeQuiz.questions.length} correct</h3><p>${activeQuiz.score === activeQuiz.questions.length ? "Brilliant work. You have this." : "Nice effort. Review the explanations, then give it another try."}</p><button id="newQuiz" class="btn small">Try another round</button></div>`;
+          } else {
+            const question = activeQuiz.questions[activeQuiz.index];
+            body = `<form id="quizAnswerForm" class="tool-form"><span class="tag">Question ${activeQuiz.index + 1} of ${activeQuiz.questions.length}</span><h3 class="quiz-question">${escapeHTML(question.q)}</h3><div class="answer-list">${question.choices.map((choice, index) => `<label class="answer-option"><input type="radio" name="answer" value="${index}" required><span>${escapeHTML(choice)}</span></label>`).join("")}</div><button class="btn" type="submit">${activeQuiz.index === activeQuiz.questions.length - 1 ? "See my score" : "Check & continue"} <span aria-hidden="true">→</span></button></form>`;
+          }
+        } else {
+          body = `<form id="quizStartForm" class="tool-form">${topicPrompt("quizTopic", data.lastTopic)}<p class="form-note">Five AI-generated questions for ${escapeHTML(selectedSubject())}, with feedback after each one.</p><button class="btn" type="submit">Start a quick quiz <span aria-hidden="true">→</span></button></form>`;
+        }
+        return `${pageHeading("A quick check-in, just for you.", `Practice ${escapeHTML(selectedSubject())} at your own pace.`)}
+          <div class="tool-layout"><section class="card card-pad"><div class="section-head"><h2 class="section-title">${activeQuiz?.done ? "Your result" : activeQuiz ? "Your practice round" : "What have you been learning?"}</h2><span class="tag">${escapeHTML(selectedSubject())}</span></div>${body}${activeQuiz && !activeQuiz.done && activeQuiz.feedback ? `<div class="callout" style="margin-top:14px">${escapeHTML(activeQuiz.feedback)}</div>` : ""}</section>
+          <section class="card card-pad"><h2 class="section-title">Practice, don't cram</h2><p class="muted" style="line-height:1.7">Take your time with each question. If you miss one, the explanation helps you learn the idea rather than just remember a letter.</p><div class="callout" style="margin-top:15px">${demoNotice}</div></section></div>`;
+      };
+      const factsBySubject = {
+        Mathematics: ["The symbol “=” was first used by Robert Recorde in 1557 because, as he wrote, no two things could be more equal than parallel lines.", "A googol is 1 followed by 100 zeros. The word “Google” was inspired by this very large number."],
+        Physics: ["A lightning bolt can heat the air around it to temperatures hotter than the surface of the Sun.", "In a vacuum, a feather and a hammer fall at the same rate because gravity accelerates them equally."],
+        Chemistry: ["Water expands when it freezes, which is why ice is less dense than liquid water and floats.", "The only letter that does not appear in any chemical element symbol is J."],
+        Biology: ["Octopuses have three hearts, and two of them stop beating while the octopus swims.", "Some species of bamboo can grow more than 90 cm in a single day under ideal conditions."],
+        English: ["The most common letter in written English is E.", "The word “bookkeeper” has three consecutive double letters."],
+        History: ["The University of Oxford was already teaching students before the Aztec Empire was founded.", "Cleopatra lived closer in time to the Moon landing than to the building of the Great Pyramid."],
+        "Computer Science": ["The first computer “bug” was an actual moth found in a Harvard computer in 1947.", "The first computer mouse was made of wood."],
+        Other: ["Honey can remain edible for an exceptionally long time when it is properly sealed and stored.", "A day on Venus is longer than its year."]
+      };
+      const renderFacts = () => {
+        const facts = generatedFacts || (factsBySubject[selectedSubject()] || factsBySubject.Other).map((fact) => ({ fact, explanation: "" }));
+        return `${pageHeading("Curiosity is a study superpower.", `A couple of little surprises from ${escapeHTML(selectedSubject())}.`)}
+          <section class="card card-pad" style="margin-bottom:15px"><form id="factsForm" class="row wrap"><div class="field grow"><label for="factsTopic">Discover facts about a topic</label><input id="factsTopic" value="${escapeHTML(data.lastTopic)}" placeholder="e.g. Black holes, ancient Egypt, ecosystems" maxlength="200" required></div><button class="btn" type="submit">Get AI facts <span aria-hidden="true">→</span></button></form></section>
+          <div class="fact-list">${facts.map((item, index) => `<article class="card fact-card"><span class="fact-mark">${index ? "✴" : "✦"}</span><p>${escapeHTML(item.fact)}</p>${item.explanation ? `<p class="muted" style="font-size:12px">${escapeHTML(item.explanation)}</p>` : ""}</article>`).join("")}</div>
+          <div class="callout" style="margin-top:15px"><strong>Want to go deeper?</strong> Choose a topic in the subject menu and take it to <button class="btn ghost small" data-page="doubt">Doubt clearer</button></div>`;
+      };
+      const renderAnalyze = () => `${pageHeading("Bring something you want to understand.", "Add text or a file, then explore what it means in simpler language.")}
+        <div class="tool-layout"><section class="card card-pad"><form id="analyzeForm" class="tool-form">
+          <div class="field"><label for="analyzeText">Paste text or describe the material</label><textarea id="analyzeText" placeholder="Paste a paragraph, describe a diagram, or tell us what you'd like explained." maxlength="3000"></textarea></div>
+          <div class="upload-zone"><div><strong>Or add a file to your study space</strong><p>JPEG/PNG/WebP, PDF, TXT, MP3/WAV/M4A, or video · frames sampled on your device</p><input id="analyzeFile" type="file" accept="image/jpeg,image/png,image/webp,application/pdf,text/plain,audio/mpeg,audio/mp4,audio/wav,audio/webm,video/*,.pdf,.txt,.md,.csv,.json" aria-label="Choose a file to analyze"></div></div>
+          <div id="fileMeta" class="form-note">Files are sent to the configured AI provider for analysis. Video files stay on this device; sampled frames are sent instead.</div>
+          <button class="btn" type="submit">Show a simpler explanation <span aria-hidden="true">→</span></button>
+        </form></section>
+        <section class="card card-pad"><div class="section-head"><h2 class="section-title">Simpler explanation</h2><span class="tag">${escapeHTML(selectedSubject())}</span></div><div id="analyzeResponse" class="response-box"><p>Your explanation will appear here.</p><p class="form-note">${demoNotice}</p></div></section></div>`;
+      const renderHomework = () => `${pageHeading("Understand the work, then do it your way.", "Get unstuck with a process and a worked example—not a ready-to-submit answer.")}
+        <div class="tool-layout"><section class="card card-pad"><form id="homeworkForm" class="tool-form">
+          <div class="field"><label for="homeworkText">What is the assignment asking?</label><textarea id="homeworkText" placeholder="Share the question and tell us which part is confusing. Avoid adding personal information." maxlength="1600" required></textarea></div>
+          <div class="field"><label for="stuckPoint">Where do you feel stuck? (optional)</label><input id="stuckPoint" placeholder="e.g. I don't know which formula to use"></div>
+          <button class="btn" type="submit">Help me understand the process <span aria-hidden="true">→</span></button>
+        </form></section>
+        <section class="card card-pad"><h2 class="section-title">Learning-first help</h2><div class="response-box" style="margin-top:14px"><p>We’ll guide you to identify what’s given, choose a useful method, and try a similar example—without completing the assignment for you.</p><p class="form-note">${demoNotice}</p></div><div id="homeworkResponse"></div></section></div>`;
+      const scheduleLabels = { timetable: "Classes & college hours", teachers: "Teacher sessions", selfstudy: "Self-study sessions" };
+      const renderSchedule = (kind) => {
+        const entries = data.schedules[kind] || [];
+        const subjectLabel = kind === "teachers" ? "Teacher & topic" : "Topic";
+        const subjectPlaceholder = kind === "teachers" ? "Teacher — topic" : "e.g. Algebra practice";
+        const headingText = kind === "timetable" ? "Your school or college, at a glance." : kind === "teachers" ? "Keep lessons with teachers in view." : "Make a little space for focused study.";
+        const subtitle = kind === "timetable" ? "Add your class hours and what you’ll be studying." : kind === "teachers" ? "Add a teacher, what you’re working on, and when you meet." : "Plan a topic, choose a time, and make it yours.";
+        const rows = entries.length ? entries.map((entry, index) => ({ entry, index })).sort((a, b) => ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].indexOf(a.entry.day) - ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].indexOf(b.entry.day) || a.entry.time.localeCompare(b.entry.time)).map(({ entry, index }) => `<tr><td>${escapeHTML(entry.day)}</td><td>${escapeHTML(entry.time)}${entry.duration ? ` · ${escapeHTML(entry.duration)}` : ""}</td><td>${escapeHTML(entry.topic)}</td><td><button class="icon-button delete-schedule" data-kind="${kind}" data-index="${index}" aria-label="Remove ${escapeHTML(entry.topic)}">×</button></td></tr>`).join("") : "";
+        return `${pageHeading(headingText, subtitle)}
+          <section class="card card-pad"><div class="section-head"><h2 class="section-title">${scheduleLabels[kind]}</h2><span class="tag">${entries.length} planned</span></div>
+            <form class="schedule-form" data-schedule-form="${kind}">
+              <div class="field"><label for="day-${kind}">Day</label><select id="day-${kind}" name="day"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></div>
+              <div class="field"><label for="time-${kind}">Start time</label><input id="time-${kind}" name="time" type="time" required></div>
+              <div class="field"><label for="topic-${kind}">${subjectLabel}</label><input id="topic-${kind}" name="topic" placeholder="${subjectPlaceholder}" maxlength="100" required></div>
+              <div class="field"><label for="duration-${kind}">Duration</label><select id="duration-${kind}" name="duration"><option>30 min</option><option selected>1 hour</option><option>1.5 hours</option><option>2 hours</option></select></div>
+              <button class="btn" type="submit">Add session</button>
+            </form>
+          </section>
+          <section class="card card-pad" style="margin-top:16px"><div class="section-head"><h2 class="section-title">Your week</h2><span class="muted" style="font-size:11px">Times shown in your local time</span></div>
+            ${rows ? `<div style="overflow-x:auto"><table class="schedule-table"><thead><tr><th>Day</th><th>Time</th><th>${subjectLabel}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty-state">Nothing planned yet. Add a session above to start shaping your week.</div>`}
+          </section>`;
+      };
+      const renderDaily = () => {
+        const todayDone = data.lastDaily === todayKey();
+        const previousTopics = previousStudyTopics();
+        let dailyContent;
+        if (todayDone) {
+          dailyContent = `<div class="response-box"><span class="eyebrow">Today’s check-in</span><h3 style="font-size:23px;margin:8px 0">${data.dailyScore} / 5 correct</h3><p>You showed up for your learning today. Come back tomorrow for another quick round.</p></div>`;
+        } else if (dailyState?.done) {
+          dailyContent = `<div class="response-box"><span class="eyebrow">Today’s check-in</span><h3 style="font-size:23px;margin:8px 0">${dailyState.score} / 5 correct</h3><p>${dailyState.score >= 4 ? "Great recall. Keep that momentum going." : "Every try helps strengthen what you know."}</p></div>`;
+        } else if (dailyState?.loading) {
+          dailyContent = `<div class="response-box"><p>Preparing five questions from ${escapeHTML(dailyState.topic)}…</p></div>`;
+        } else if (dailyState?.started) {
+          const q = dailyState.questions[dailyState.index];
+          dailyContent = `<form id="dailyAnswerForm" class="tool-form"><span class="tag">Question ${dailyState.index + 1} of 5</span><h3 class="quiz-question">${escapeHTML(q.q)}</h3><div class="answer-list">${q.choices.map((choice, index) => `<label class="answer-option"><input type="radio" name="answer" value="${index}" required><span>${escapeHTML(choice)}</span></label>`).join("")}</div><button class="btn" type="submit">${dailyState.index === 4 ? "Finish check-in" : "Check & continue"} <span aria-hidden="true">→</span></button></form>`;
+        } else {
+          dailyContent = previousTopics.length
+            ? `<div class="response-box"><h3>Five questions. A few minutes.</h3><p>A quick recall practice based on yesterday’s topics: <strong>${previousTopics.map((entry) => `${escapeHTML(entry.topic)} (${escapeHTML(entry.subject)})`).join(", ")}</strong>.</p><button class="btn" id="startDaily">Start today’s quiz <span aria-hidden="true">→</span></button></div>`
+            : `<div class="response-box"><h3>Your daily check-in is ready for tomorrow</h3><p>Study a topic today using Doubt clearer or Self study. Tomorrow, your five-question quiz will be based on what you worked on.</p><button class="btn secondary" data-page="doubt">Study a topic today</button></div>`;
+        }
+        const days = [];
+        for (let i = 6; i >= 0; i--) {
+          const date = new Date(); date.setDate(date.getDate() - i);
+          const completed = (data.dailyHistory || []).includes(dateKey(date)) || (i === 0 && Boolean(dailyState?.done));
+          days.push(`<div class="streak-day ${completed ? "done" : ""}"><span>${completed ? "✓" : "·"}</span>${date.toLocaleDateString(undefined, { weekday: "short" })}</div>`);
+        }
+        return `${pageHeading("A little recall, every day.", "Five quick questions from the topics you’ve been studying.")}
+          <div class="tool-layout"><section class="card card-pad"><div class="section-head"><h2 class="section-title">Your daily check-in</h2><span class="tag"><span class="dot"></span> ${data.streak} day streak</span></div>${dailyContent}${dailyState?.feedback ? `<div class="callout" style="margin-top:14px">${escapeHTML(dailyState.feedback)}</div>` : ""}</section>
+          <section class="card card-pad"><h2 class="section-title">Show up for yourself</h2><p class="muted" style="line-height:1.7">A streak is a gentle reminder, not a grade. Your daily practice is saved on this device.</p><div class="streak-strip" style="margin-top:16px">${days.join("")}</div><div class="callout" style="margin-top:16px">${previousTopics.length ? `Yesterday: <strong>${previousTopics.map((entry) => escapeHTML(entry.topic)).join(", ")}</strong>` : data.lastTopic ? `Most recent topic: <strong>${escapeHTML(data.lastTopic)}</strong>` : "Ask a question or make a study plan to save a topic for tomorrow."}</div></section></div>`;
+      };
+      const careerInterests = [
+        "Mathematics", "Science", "Biology", "Physics", "Chemistry", "Computer Science", "Artificial Intelligence",
+        "Engineering", "Business", "Finance", "Economics", "Law", "Medicine", "Design", "Art", "Writing",
+        "Psychology", "Teaching", "Public service", "Entrepreneurship", "Research", "Social impact", "Environment"
+      ];
+      const careerActivities = [
+        "Solving problems", "Building things", "Working with computers", "Conducting experiments", "Helping people",
+        "Leading teams", "Managing money", "Creating designs", "Researching topics", "Communicating", "Starting projects"
+      ];
+      const careerPreferences = [
+        "Independent work", "Teamwork", "Creative work", "Analytical work", "Practical work",
+        "Research", "Business management", "Public interaction", "Structured environments", "Flexible environments"
+      ];
+      const careerCatalog = [
+        { id: "software-developer", title: "Software developer", category: "Computing & technology", interests: ["Computer Science", "Mathematics", "Artificial Intelligence"], activities: ["Solving problems", "Building things", "Working with computers"], subjects: "Mathematics, computer science, and clear written communication can be useful foundations.", pathway: "Explore school-level computing and mathematics, then compare relevant diplomas or undergraduate computing degrees. Requirements vary by course and institution; project portfolios and alternative learning routes may also help build skills.", skills: "Programming fundamentals, logical reasoning, testing, collaboration, and explaining technical ideas.", work: "Builds and maintains software with teams or independently; roles exist across many sectors.", explore: "Try a small, age-appropriate coding project and compare two course syllabi before choosing a path.", style: "Analytical and practical; often collaborative, with opportunities for independent focus." },
+        { id: "data-scientist", title: "Data and research analyst", category: "Data & research", interests: ["Mathematics", "Computer Science", "Research", "Economics"], activities: ["Solving problems", "Researching topics", "Working with computers"], subjects: "Mathematics, statistics, computer science, and a domain subject are useful to explore.", pathway: "Build mathematics and data-literacy foundations, then research undergraduate statistics, computing, economics, or domain-specific programmes. Course prerequisites differ; inspect official admissions pages.", skills: "Statistics, careful data handling, critical thinking, visualization, and communication.", work: "Studies data to answer practical questions; methods and tools depend on the field.", explore: "Use a public, non-sensitive dataset for a simple chart and write what it can and cannot show.", style: "Analytical and research-oriented; usually combines focused work with team discussion." },
+        { id: "healthcare", title: "Healthcare professional", category: "Health & life sciences", interests: ["Medicine", "Biology", "Science", "Social impact"], activities: ["Helping people", "Conducting experiments", "Researching topics"], subjects: "Biology and chemistry are relevant to many clinical pathways; exact subject and entrance rules depend on the profession and region.", pathway: "First explore different healthcare roles, then check the relevant regulator and official course requirements for each. Clinical practice commonly requires recognized education, supervised training, and registration.", skills: "Scientific reasoning, communication, teamwork, reliability, and empathy.", work: "Healthcare includes clinical, laboratory, public-health, research, and technology roles with different training routes.", explore: "Compare one clinical role and one non-clinical health role using official professional-body information.", style: "People-focused and structured; responsibilities and training vary substantially by role." },
+        { id: "engineer", title: "Engineer", category: "Engineering & design", interests: ["Engineering", "Mathematics", "Physics", "Science"], activities: ["Solving problems", "Building things", "Conducting experiments"], subjects: "Mathematics and relevant sciences often support engineering study; prerequisites depend on the branch and institution.", pathway: "Explore engineering branches through projects, then compare diploma and degree routes and their official eligibility criteria.", skills: "Mathematical reasoning, design, testing, teamwork, and safety awareness.", work: "Applies technical methods to design, build, test, or improve systems across many industries.", explore: "Choose a branch such as civil, electrical, or mechanical and compare its first-year curriculum at official institutions.", style: "Practical and analytical; can involve teams, field work, laboratories, or design work." },
+        { id: "designer", title: "Designer and creative technologist", category: "Design & creative industries", interests: ["Design", "Art", "Computer Science", "Writing"], activities: ["Creating designs", "Building things", "Communicating"], subjects: "Art, design, communication, and digital tools can all be useful; entry routes differ widely.", pathway: "Try varied creative projects, build a portfolio, and compare design degrees, vocational programmes, and apprenticeship options. Check each programme's portfolio and eligibility requirements.", skills: "Visual communication, observation, prototyping, feedback, and accessible design.", work: "Creates or improves visual, product, service, or digital experiences.", explore: "Redesign a familiar study screen for accessibility and explain your choices in a short portfolio note.", style: "Creative and iterative; often balances independent making with feedback and teamwork." },
+        { id: "teacher", title: "Teacher and learning specialist", category: "Education & public service", interests: ["Teaching", "Writing", "Psychology", "Social impact"], activities: ["Helping people", "Communicating", "Researching topics"], subjects: "Strong subject knowledge plus communication and learning skills are useful foundations.", pathway: "Explore teaching, tutoring, educational technology, and learning-support roles. Qualification and licensing requirements vary by level, school type, and region; verify with official education authorities.", skills: "Clear explanations, planning, patience, subject expertise, and inclusive communication.", work: "Supports learning in schools, communities, training, or education services.", explore: "Prepare a short explanation of a topic you enjoy and ask a learner what made it clear.", style: "People-focused and collaborative, with structured planning and adaptable delivery." },
+        { id: "law", title: "Law and public policy", category: "Law & society", interests: ["Law", "Writing", "Public service", "Social impact"], activities: ["Researching topics", "Solving problems", "Communicating"], subjects: "Reading, writing, civics, and structured reasoning can help prepare for exploring legal studies.", pathway: "Compare law degrees and related public-policy routes. Entry tests, approved qualifications, and professional practice rules differ; check official university and bar/regulatory sources.", skills: "Research, careful reading, argument, ethics, negotiation, and writing.", work: "Legal and policy work spans practice, government, business, research, and community services.", explore: "Summarize a public policy question from two perspectives using reliable sources.", style: "Research-intensive and communication-heavy; work settings vary widely." },
+        { id: "environment", title: "Environmental and climate specialist", category: "Science & sustainability", interests: ["Environment", "Science", "Biology", "Engineering", "Social impact"], activities: ["Conducting experiments", "Researching topics", "Helping people"], subjects: "Sciences, mathematics, geography, and policy can all connect to environmental work.", pathway: "Explore science, engineering, agriculture, geography, and policy programmes, then check specific course prerequisites and practical training.", skills: "Evidence analysis, systems thinking, measurement, communication, and collaboration.", work: "Works on environmental monitoring, conservation, energy, planning, research, or policy.", explore: "Investigate one local environmental question using public information and note data limitations.", style: "Connects practical field or lab work with research and community or policy collaboration." },
+        { id: "finance", title: "Finance and accounting", category: "Business & finance", interests: ["Finance", "Mathematics", "Economics", "Business"], activities: ["Managing money", "Solving problems", "Researching topics"], subjects: "Mathematics, economics, and careful communication are useful foundations; routes differ among roles.", pathway: "Compare commerce, economics, accounting, and finance courses, including professional qualifications. Check official exam, membership, and course requirements.", skills: "Numeracy, accuracy, ethics, analysis, and explaining financial information.", work: "Supports planning, reporting, audit, investment, or financial operations in different settings.", explore: "Create a simple budget for a fictional project and explain the assumptions.", style: "Structured and analytical, with varied levels of client and team interaction." },
+        { id: "researcher", title: "Scientist and researcher", category: "Science & research", interests: ["Research", "Science", "Biology", "Physics", "Chemistry", "Mathematics"], activities: ["Conducting experiments", "Researching topics", "Solving problems"], subjects: "Deep subject knowledge, mathematics, and research methods build over time in a chosen discipline.", pathway: "Explore undergraduate study in a specific discipline, then research postgraduate or research routes if they fit your interests. Requirements and career structures vary by field and institution.", skills: "Curiosity, evidence evaluation, experimental design, persistence, and writing.", work: "Investigates questions in universities, laboratories, public services, or industry.", explore: "Turn a question into a small safe investigation and separate observations from interpretation.", style: "Curiosity-led and analytical; long projects often involve collaboration." },
+        { id: "entrepreneur", title: "Entrepreneur and small-business builder", category: "Business & entrepreneurship", interests: ["Entrepreneurship", "Business", "Design", "Economics", "Social impact"], activities: ["Starting projects", "Building things", "Managing money", "Communicating"], subjects: "Business, mathematics, technology, communication, and knowledge of a specific customer problem can all help.", pathway: "Start with a low-cost learning project: understand a problem, interview people with appropriate consent, and test a simple prototype. Business ownership involves uncertainty and legal obligations; minors need trusted adult supervision.", skills: "Customer research, budgeting, communication, adaptability, and ethical decision-making.", work: "Creates or runs a product, service, community project, or organization; outcomes are uncertain and not guaranteed.", explore: "Design a no-cost prototype for a school or community need without collecting sensitive data or taking financial risk.", style: "Autonomous and varied; combines planning, practical work, and uncertainty." },
+        { id: "psychology", title: "Psychology and human services", category: "People & social sciences", interests: ["Psychology", "Biology", "Social impact", "Research"], activities: ["Helping people", "Researching topics", "Communicating"], subjects: "Psychology, biology, statistics, and communication can support exploration; professional practice has specific qualifications.", pathway: "Compare psychology and related social-science courses. Clinical and other regulated practice requires the qualifications and registration set by the relevant authority.", skills: "Listening, research literacy, ethical judgment, communication, and data interpretation.", work: "Studies or supports human behavior in research, education, organizations, or regulated services.", explore: "Read an introductory research summary and identify its question, sample, and limitations.", style: "People-aware and research-informed; roles differ in whether they involve direct support." },
+        { id: "public-service", title: "Public service and community work", category: "Government & social impact", interests: ["Public service", "Social impact", "Law", "Economics"], activities: ["Helping people", "Leading teams", "Communicating", "Researching topics"], subjects: "Civics, history, economics, data literacy, and communication may help depending on the role.", pathway: "Explore public administration, community services, policy, and government roles. Recruitment, examinations, and eligibility are role- and region-specific; use official notices.", skills: "Clear communication, service orientation, analysis, organization, and ethical judgment.", work: "Contributes to public programmes, services, governance, or community organizations.", explore: "Research one local public service and map how a resident can access it using official information.", style: "Service-oriented and structured, with both public interaction and planning." }
+      ];
+      const careerInterestsByActivity = (activity) => careerCatalog.filter((career) => career.activities.includes(activity));
+      const examCategories = ["School exam", "Olympiad", "Scholarship", "Entrance", "Coding / STEM", "Other"];
+      let examFilters = { query: "", category: "", view: "all" };
+      let careerSection = "home";
+      let careerQuery = "";
+      let selectedCareerId = "";
+      let counsellorResponse = "";
+      let careerCompareIds = ["software-developer", "entrepreneur"];
+      const examDaysUntil = (value) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(value || "")) return null;
+        const date = new Date(`${value}T00:00:00`);
+        if (Number.isNaN(date.valueOf())) return null;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        return Math.round((date - today) / 86_400_000);
+      };
+      const examDateLabel = (date, fallback) => date
+        ? new Date(`${date}T00:00:00`).toLocaleDateString(undefined, { year: "numeric", month: "short", day: "numeric" })
+        : fallback;
+      const examTopics = (exam) => (exam.topics || "").split(/[\n,]+/).map((topic) => topic.trim()).filter(Boolean).slice(0, 30);
+      const examPlanTasks = (exam, days) => {
+        const untilExam = examDaysUntil(exam.examDate);
+        const planLength = untilExam == null || untilExam < 1 ? days : Math.min(days, untilExam);
+        const topics = examTopics(exam);
+        return Array.from({ length: Math.max(1, planLength) }, (_, index) => {
+          const day = index + 1;
+          if (day === planLength && planLength > 1) return `Final review: revisit your topics and try a timed practice quiz.`;
+          if (day === planLength - 1 && planLength > 2) return `Review difficult topics and make a short list of questions to revisit.`;
+          if (!topics.length) return day === 1
+            ? "Check the official syllabus and gather your class notes."
+            : day % 3 === 0 ? "Use active recall and attempt a short practice set." : "Review class notes and write down one topic to strengthen.";
+          const topic = topics[Math.floor(index * topics.length / Math.max(planLength, 1)) % topics.length];
+          return day % 3 === 0
+            ? `Practise questions on ${topic}; note anything to review.`
+            : `Review ${topic} and explain the key idea from memory.`;
+        });
+      };
+      const renderExamList = () => {
+        const container = $("#examList");
+        if (!container) return;
+        const exams = (Array.isArray(data.exams) ? data.exams : []).filter((exam) => {
+          const searchable = [exam.name, exam.category, exam.level, exam.board, exam.subject, exam.organizer, exam.topics].join(" ").toLowerCase();
+          const days = examDaysUntil(exam.examDate);
+          return (!examFilters.query || searchable.includes(examFilters.query.toLowerCase())) &&
+            (!examFilters.category || exam.category === examFilters.category) &&
+            (examFilters.view === "all" ||
+              (examFilters.view === "upcoming" && days != null && days >= 0) ||
+              (examFilters.view === "saved" && exam.saved) ||
+              (examFilters.view === "level" && String(exam.level || "").trim().toLowerCase() === String(profile.level || "").trim().toLowerCase()));
+        }).sort((a, b) => {
+          const aDays = examDaysUntil(a.examDate);
+          const bDays = examDaysUntil(b.examDate);
+          if (aDays == null) return bDays == null ? a.name.localeCompare(b.name) : 1;
+          if (bDays == null) return -1;
+          return aDays - bDays;
+        });
+        const count = $("#examCount");
+        if (count) count.textContent = `${exams.length} ${exams.length === 1 ? "exam" : "exams"}`;
+        if (!exams.length) {
+          container.innerHTML = `<div class="exam-empty"><strong>${data.exams.length ? "No exams match these filters" : "Your exam list is ready when you are"}</strong><br>${data.exams.length ? "Try changing the search or filter." : "Add an exam or competition with dates from its official announcement. StudyOrbit will not guess dates."}</div>`;
+          return;
+        }
+        container.innerHTML = exams.map((exam) => {
+          const examDays = examDaysUntil(exam.examDate);
+          const deadlineDays = examDaysUntil(exam.deadline);
+          const progress = data.examProgress[exam.id];
+          const savedPlan = data.examPlans[exam.id];
+          const selectedPlan = {
+            days: Number(savedPlan?.days) || 7,
+            completed: Array.isArray(savedPlan?.completed) ? savedPlan.completed : []
+          };
+          const tasks = examPlanId === exam.id ? examPlanTasks(exam, examPlanDays) : [];
+          const source = exam.sourceUrl ? `<a class="exam-source" href="${escapeHTML(exam.sourceUrl)}" target="_blank" rel="noopener noreferrer">Official source entered ↗</a>` : `<span class="muted" style="font-size:11px">Source link not added</span>`;
+          const examCountdown = examDays == null ? "Exam date: Not Announced" : examDays < 0 ? `Exam date passed ${Math.abs(examDays)} day${Math.abs(examDays) === 1 ? "" : "s"} ago` : examDays === 0 ? "Exam is today" : `${examDays} day${examDays === 1 ? "" : "s"} to exam`;
+          const deadlineTag = deadlineDays == null ? "Registration: Not Announced" : deadlineDays < 0 ? "Registration deadline passed" : deadlineDays <= 30 ? `Registration closes in ${deadlineDays} day${deadlineDays === 1 ? "" : "s"}` : `Deadline ${examDateLabel(exam.deadline, "")}`;
+          return `<article class="card exam-card">
+            <div class="exam-card-top"><div><span class="eyebrow">${escapeHTML(exam.category)}</span><h3>${escapeHTML(exam.name)}</h3><p>${escapeHTML([exam.level, exam.board, exam.subject].filter(Boolean).join(" · ") || "Personal exam tracker")}</p></div><span class="exam-badge ${exam.verified ? "verified" : "warn"}">${exam.verified ? "Source checked" : "Unverified"}</span></div>
+            <div class="exam-meta"><span class="exam-badge">${escapeHTML(examCountdown)}</span><span class="exam-badge ${deadlineDays != null && deadlineDays >= 0 && deadlineDays <= 30 ? "warn" : ""}">${escapeHTML(deadlineTag)}</span>${String(exam.level || "").trim().toLowerCase() === String(profile.level || "").trim().toLowerCase() ? `<span class="exam-badge">Profile level match · verify eligibility</span>` : ""}</div>
+            <p>Organizer: ${escapeHTML(exam.organizer || "Not Available")} · Exam date: ${escapeHTML(examDateLabel(exam.examDate, "Not Announced"))}</p>
+            <p>Registration deadline: ${escapeHTML(examDateLabel(exam.deadline, "Not Announced"))}${exam.verifiedAt ? ` · Checked ${escapeHTML(exam.verifiedAt)}` : ""}</p>
+            <div style="margin-top:9px">${source}</div>
+            ${exam.topics ? `<p class="exam-topics"><strong>Topics / syllabus notes:</strong> ${escapeHTML(exam.topics).replace(/\n/g, ", ")}</p>` : `<p class="exam-topics">Syllabus: Not Available. Add topics from the official syllabus when known.</p>`}
+            ${progress ? `<p class="exam-topics"><strong>Practice:</strong> ${progress.attempts} quiz${progress.attempts === 1 ? "" : "zes"} · best score ${progress.bestScore}/5 · last tried ${escapeHTML(progress.lastDate)}</p>` : ""}
+            <div class="exam-actions">
+              <button type="button" class="btn small" data-exam-practice="${escapeHTML(exam.id)}">Create 5-question practice quiz</button>
+              <button type="button" class="btn secondary small" data-exam-plan="${escapeHTML(exam.id)}">${examPlanId === exam.id ? "Hide prep plan" : "Build prep plan"}</button>
+              <button type="button" class="btn ghost small" data-exam-save="${escapeHTML(exam.id)}">${exam.saved ? "Remove from saved" : "Save exam"}</button>
+              <button type="button" class="btn ghost small" data-exam-edit="${escapeHTML(exam.id)}">Edit</button>
+              <button type="button" class="btn ghost small" data-exam-delete="${escapeHTML(exam.id)}">Remove</button>
+            </div>
+            ${examPlanId === exam.id ? `<div class="exam-plan"><div class="row wrap"><strong class="section-title grow">Study plan</strong><label class="field" style="grid-template-columns:auto auto;align-items:center;gap:6px"><span>Plan length</span><select data-exam-plan-days="${escapeHTML(exam.id)}" aria-label="Preparation plan length">${[7, 15, 30, 60].map((days) => `<option value="${days}" ${examPlanDays === days ? "selected" : ""}>${days} days</option>`).join("")}</select></label></div><p class="muted" style="margin:0;font-size:11px">${exam.examDate ? `Suggested review plan based on your entered date. ${examDays > 0 ? `${examDays} days remain.` : "Date is today or has passed."}` : "Suggested plan only. Add an announced exam date to adapt the time available."} ${exam.topics ? "" : "No syllabus topics added; tasks are general revision prompts."}</p>${tasks.map((task, index) => `<label class="exam-plan-item"><input type="checkbox" data-exam-task="${escapeHTML(exam.id)}" data-task-index="${index}" ${selectedPlan.days === examPlanDays && selectedPlan.completed.includes(index) ? "checked" : ""}><span><strong>Day ${index + 1}:</strong> ${escapeHTML(task)}</span></label>`).join("")}<span class="exam-topics">${selectedPlan.days === examPlanDays ? selectedPlan.completed.length : 0} / ${tasks.length} days checked</span></div>` : ""}
+          </article>`;
+        }).join("");
+      };
+      const editingExam = () => data.exams.find((exam) => exam.id === editingExamId) || null;
+      const renderExams = () => {
+        const exam = editingExam();
+        const dateInput = (id, label, value) => `<div class="field"><label for="${id}">${label}</label><input type="date" id="${id}" name="${id}" value="${escapeHTML(value || "")}"></div>`;
+        const categoryOptions = examCategories.map((category) => `<option ${exam?.category === category ? "selected" : ""}>${escapeHTML(category)}</option>`).join("");
+        const subjectOptionsMarkup = subjectOptions.map((subject) => `<option ${((exam?.subject || selectedSubject()) === subject) ? "selected" : ""}>${escapeHTML(subject)}</option>`).join("");
+        const savedExams = data.exams.filter((item) => item.saved).length;
+        const upcomingExams = data.exams.filter((item) => {
+          const days = examDaysUntil(item.examDate);
+          return days != null && days >= 0;
+        }).length;
+        const nextExam = data.exams.map((item) => ({ item, days: examDaysUntil(item.examDate) }))
+          .filter(({ days }) => days != null && days >= 0).sort((a, b) => a.days - b.days)[0];
+        return `${pageHeading("Exams, without the guesswork.", "Track school exams, Olympiads, scholarships, entrance opportunities, and competitions alongside your regular study tools.")}
+          <div class="exam-stats">
+            <section class="card exam-stat"><span>Tracked exams</span><strong>${data.exams.length}</strong></section>
+            <section class="card exam-stat"><span>Upcoming with a date</span><strong>${upcomingExams}</strong></section>
+            <section class="card exam-stat"><span>Saved to revisit</span><strong>${savedExams}</strong></section>
+          </div>
+          ${nextExam ? `<div class="callout" style="margin-bottom:15px"><strong>Next up:</strong> ${escapeHTML(nextExam.item.name)} · ${nextExam.days === 0 ? "today" : `${nextExam.days} day${nextExam.days === 1 ? "" : "s"} away`} · ${escapeHTML(examDateLabel(nextExam.item.examDate, ""))}</div>` : ""}
+          <div class="grid home-columns">
+            <section class="card card-pad">
+              <div class="section-head"><div><h2 class="section-title">${exam ? "Update your exam" : "Add an exam or opportunity"}</h2><p class="muted" style="margin:6px 0 0;font-size:11px">Personal tracker · saved in this browser</p></div></div>
+              <form id="examForm" class="exam-form-grid">
+                <div class="field"><label for="examName">Examination name</label><input id="examName" name="name" value="${escapeHTML(exam?.name || "")}" maxlength="120" placeholder="e.g. Annual Mathematics Exam" required></div>
+                <div class="field"><label for="examCategory">Category</label><select id="examCategory" name="category">${categoryOptions || examCategories.map((category) => `<option>${escapeHTML(category)}</option>`).join("")}</select></div>
+                <div class="field"><label for="examLevel">Class / study level</label><input id="examLevel" name="level" value="${escapeHTML(exam?.level || profile.level)}" maxlength="80" required></div>
+                <div class="field"><label for="examBoard">Board / organizer authority</label><input id="examBoard" name="board" value="${escapeHTML(exam?.board || "")}" maxlength="100" placeholder="e.g. CBSE / organizer"></div>
+                <div class="field"><label for="examSubject">Subject</label><select id="examSubject" name="subject">${subjectOptionsMarkup}</select></div>
+                <div class="field"><label for="examOrganizer">Organizer / school</label><input id="examOrganizer" name="organizer" value="${escapeHTML(exam?.organizer || "")}" maxlength="120" placeholder="Optional"></div>
+                ${dateInput("examDate", "Examination date", exam?.examDate)}
+                ${dateInput("examDeadline", "Registration deadline", exam?.deadline)}
+                <div class="field wide"><label for="examSource">Official information URL</label><input type="url" id="examSource" name="sourceUrl" value="${escapeHTML(exam?.sourceUrl || "")}" maxlength="500" placeholder="https://..."><small class="muted">Add the official announcement or organizer page. Dates are never filled in automatically.</small></div>
+                <div class="field wide"><label for="examTopics">Syllabus / topics</label><textarea id="examTopics" name="topics" maxlength="2500" placeholder="Add verified syllabus topics, separated by commas or new lines">${escapeHTML(exam?.topics || "")}</textarea></div>
+                <label class="exam-plan-item wide"><input type="checkbox" name="verified" ${exam?.verified ? "checked" : ""}><span>I checked these details against the official source above. StudyOrbit does not independently verify them.</span></label>
+                <div class="exam-actions wide"><button class="btn" type="submit">${exam ? "Save exam changes" : "Add to my exams"}</button>${exam ? `<button class="btn ghost" type="button" data-exam-cancel-edit>Cancel</button>` : ""}</div>
+              </form>
+            </section>
+            <section class="card card-pad">
+              <div class="section-head"><div><h2 class="section-title">Your exam list</h2><p id="examCount" class="muted" style="margin:6px 0 0;font-size:11px"></p></div><span class="tag">${escapeHTML(profile.level)}</span></div>
+              <div class="exam-filters">
+                <div class="field wide"><label for="examSearch">Search exams</label><input id="examSearch" type="search" value="${escapeHTML(examFilters.query)}" placeholder="Name, subject, board, topics…"></div>
+                <div class="field"><label for="examCategoryFilter">Category</label><select id="examCategoryFilter"><option value="">All categories</option>${examCategories.map((category) => `<option value="${escapeHTML(category)}" ${examFilters.category === category ? "selected" : ""}>${escapeHTML(category)}</option>`).join("")}</select></div>
+                <div class="field"><label for="examViewFilter">Show</label><select id="examViewFilter"><option value="all" ${examFilters.view === "all" ? "selected" : ""}>All exams</option><option value="upcoming" ${examFilters.view === "upcoming" ? "selected" : ""}>Upcoming with dates</option><option value="saved" ${examFilters.view === "saved" ? "selected" : ""}>Saved only</option><option value="level" ${examFilters.view === "level" ? "selected" : ""}>My study level</option></select></div>
+              </div>
+              <div id="examList" class="exam-list"></div>
+            </section>
+          </div>
+          <p class="muted" style="margin-top:14px;font-size:11px;line-height:1.6">This version is a personal exam tracker, not a live examination feed. External dates, eligibility, fees, and registration details may change; confirm them on the official source before acting. No information is invented when a date is unknown.</p>`;
+      };
+      const careerMatches = () => {
+        const assessment = data.careerProfile;
+        if (!assessment) return [];
+        return careerCatalog.map((career) => {
+          const interests = career.interests.filter((item) => assessment.interests.includes(item));
+          const activities = career.activities.filter((item) => assessment.activities.includes(item));
+          const score = interests.length * 2 + activities.length;
+          const reasons = [
+            ...interests.map((item) => `your interest in ${item}`),
+            ...activities.map((item) => `you enjoy ${item.toLowerCase()}`)
+          ];
+          return { career, score, reasons };
+        }).filter((match) => match.score > 0)
+          .sort((a, b) => b.score - a.score || a.career.title.localeCompare(b.career.title));
+      };
+      const careerTags = (values) => values.map((item) => `<span class="exam-badge">${escapeHTML(item)}</span>`).join("");
+      const careerDetailMarkup = (career) => `
+        <section class="card career-detail" style="margin-top:14px">
+          <div class="row wrap"><div class="grow"><span class="career-category">${escapeHTML(career.category)}</span><h2>${escapeHTML(career.title)}</h2></div><button class="btn ghost small" data-career-back>Back to careers</button></div>
+          <p>${escapeHTML(career.work)}</p>
+          <div class="career-facts">
+            <div class="career-fact"><strong>Study pathways</strong><span>${escapeHTML(career.pathway)}</span></div>
+            <div class="career-fact"><strong>Useful subjects to explore</strong><span>${escapeHTML(career.subjects)}</span></div>
+            <div class="career-fact"><strong>Skills to develop</strong><span>${escapeHTML(career.skills)}</span></div>
+            <div class="career-fact"><strong>Work preferences</strong><span>${escapeHTML(career.style)}</span></div>
+          </div>
+          <div class="career-note" style="margin-top:12px"><strong>Try this next:</strong> ${escapeHTML(career.explore)} These are exploration ideas, not guaranteed routes or employment outcomes. Course prerequisites and professional requirements depend on institution and region.</div>
+          <div class="row wrap" style="margin-top:13px">
+            <button class="btn small" data-career-roadmap="${escapeHTML(career.id)}">Add to my roadmap</button>
+            <button class="btn secondary small" data-career-save="${escapeHTML(career.id)}">${data.savedCareers.includes(career.id) ? "Remove saved career" : "Save career"}</button>
+            <a class="exam-source" href="https://www.ncs.gov.in/" target="_blank" rel="noopener noreferrer">Explore India's National Career Service ↗</a>
+          </div>
+        </section>`;
+      const renderCareerHome = () => {
+        const matches = careerMatches();
+        const plansDone = data.careerPlans.reduce((total, plan) => total + plan.milestones.filter((item) => item.done).length, 0);
+        const plansTotal = data.careerPlans.reduce((total, plan) => total + plan.milestones.length, 0);
+        const recommendations = matches.length
+          ? `<div class="career-grid">${matches.slice(0, 4).map((match) => `<article class="card career-card"><span class="career-category">${escapeHTML(match.career.category)}</span><h3>${escapeHTML(match.career.title)}</h3><p class="career-reason">Why it appeared: ${escapeHTML(match.reasons.join("; "))}.</p><button class="btn ghost small" data-career-open="${escapeHTML(match.career.id)}">Explore this path</button></article>`).join("")}</div>`
+          : `<div class="career-note">${data.careerProfile ? "No matches yet. Add a few more interests or activities in the assessment; you can also browse every career without taking it." : "Complete the optional interest check-in for explainable matches. You can explore any pathway without taking an assessment."}</div>`;
+        return `<section class="career-hero"><span class="eyebrow">Explore, don't decide today</span><h2>Discover what could fit you.</h2><p>Explore careers, learning pathways, and small next steps. Your interests can change; these suggestions are prompts for reflection, not a test result or a prediction.</p><div class="hero-actions"><button class="btn" data-career-section="assessment">Discover my future <span aria-hidden="true">→</span></button><button class="btn secondary" data-career-section="explore">Explore careers</button></div></section>
+          <div class="exam-stats" style="margin-top:14px"><section class="card exam-stat"><span>Interest profile</span><strong>${data.careerProfile ? "Ready" : "Optional"}</strong></section><section class="card exam-stat"><span>Saved careers</span><strong>${data.savedCareers.length}</strong></section><section class="card exam-stat"><span>Roadmap steps</span><strong>${plansDone}/${plansTotal}</strong></section></div>
+          <section class="card card-pad" style="margin-bottom:14px"><div class="section-head"><div><div class="eyebrow">Starting points, based on what you shared</div><h2 class="section-title" style="margin-top:5px">Paths to explore</h2></div><button class="btn ghost small" data-career-section="assessment">Update interests</button></div>${recommendations}</section>
+          <div class="career-grid"><section class="card card-pad"><h2 class="section-title">Education and opportunities</h2><p class="muted" style="font-size:12px;line-height:1.7">Compare course requirements and admissions only through official institution or government pages. This local app does not retrieve current openings, fees, scholarships, or deadlines.</p><a class="exam-source" href="https://www.education.gov.in/" target="_blank" rel="noopener noreferrer">Ministry of Education, India ↗</a><br><a class="exam-source" href="https://www.ncs.gov.in/" target="_blank" rel="noopener noreferrer">National Career Service, India ↗</a><div style="margin-top:12px"><button class="btn secondary small" data-career-section="explore">Explore learning pathways</button></div></section>
+          <section class="card card-pad"><h2 class="section-title">Compare possibilities</h2><p class="muted" style="font-size:12px;line-height:1.7">Think through study, employment, and entrepreneurship trade-offs without assuming one path is best.</p><button class="btn secondary small" data-career-section="compare">Open comparison</button><button class="btn ghost small" style="margin-left:7px" data-career-section="counsellor">Ask the career guide</button></section></div>
+          <p class="muted" style="margin-top:14px;font-size:11px">Career profile, saved options, and plans are stored in this browser. No live labour-market or admissions data is connected.</p>`;
+      };
+      const renderCareerAssessment = () => {
+        const assessment = data.careerProfile || { interests: [], activities: [], preferences: [] };
+        const checkGroup = (name, label, items, selected) => `<fieldset class="card card-pad" style="margin:0"><legend class="section-title">${label}</legend><div class="career-check-grid" style="margin-top:11px">${items.map((item) => `<label class="career-check"><input type="checkbox" name="${name}" value="${escapeHTML(item)}" ${selected.includes(item) ? "checked" : ""}><span>${escapeHTML(item)}</span></label>`).join("")}</div></fieldset>`;
+        const matches = careerMatches();
+        return `${pageHeading("Start with what sparks your curiosity.", "Select any interests, activities, or work styles that sound appealing. You can skip, change, or revisit these answers.")}
+          <form id="careerAssessmentForm" class="stack">
+            ${checkGroup("careerInterest", "Interests", careerInterests, assessment.interests)}
+            ${checkGroup("careerActivity", "Activities you enjoy", careerActivities, assessment.activities)}
+            ${checkGroup("careerPreference", "Work styles you might prefer", careerPreferences, assessment.preferences)}
+            <div class="row wrap"><button class="btn" type="submit">Save my exploration profile</button>${data.careerProfile ? `<button type="button" class="btn ghost" data-career-clear>Clear optional answers</button>` : ""}</div>
+          </form>
+          <div class="career-note" style="margin-top:14px">This is a reflection exercise, not a validated aptitude test, diagnosis, or measure of intelligence. Interests and circumstances can change. Your answers stay in this browser and are not sent to AI unless you choose to share a short summary in the counsellor chat.</div>
+          ${matches.length ? `<section class="card card-pad" style="margin-top:14px"><h2 class="section-title">Your exploration profile</h2><p class="muted" style="font-size:12px">These matches are based only on the boxes you selected; they are not judgments of ability or predictions.</p><div class="career-grid">${matches.slice(0, 6).map((match) => `<article class="card career-card"><span class="career-category">${escapeHTML(match.career.category)}</span><h3>${escapeHTML(match.career.title)}</h3><p class="career-reason">Matched because of ${escapeHTML(match.reasons.join(" and "))}.</p><button class="btn ghost small" data-career-open="${escapeHTML(match.career.id)}">Explore this path</button></article>`).join("")}</div></section>` : ""}`;
+      };
+      const renderCareerExplore = () => {
+        const filtered = careerCatalog.filter((career) => `${career.title} ${career.category} ${career.interests.join(" ")} ${career.skills}`.toLowerCase().includes(careerQuery.toLowerCase()));
+        const detail = careerCatalog.find((career) => career.id === selectedCareerId);
+        return `${pageHeading("Explore a wide range of futures.", "Browse career families and compare possible study routes. No single path is right for everyone.")}
+          <div class="field" style="margin-bottom:13px"><label for="careerSearch">Search careers, subjects, or skills</label><input id="careerSearch" type="search" value="${escapeHTML(careerQuery)}" placeholder="e.g. research, biology, design"></div>
+          ${filtered.length ? `<div class="career-grid">${filtered.map((career) => `<article class="card career-card"><span class="career-category">${escapeHTML(career.category)}</span><h3>${escapeHTML(career.title)}</h3><p>${escapeHTML(career.work)}</p><div class="exam-meta">${career.interests.slice(0, 3).map((tag) => `<span class="exam-badge">${escapeHTML(tag)}</span>`).join("")}</div><button class="btn ghost small" data-career-open="${escapeHTML(career.id)}">View pathway</button></article>`).join("")}</div>` : `<div class="exam-empty">No career paths match that search. Try a subject, activity, or broader term.</div>`}
+          ${detail ? careerDetailMarkup(detail) : ""}
+          <div class="career-note" style="margin-top:14px">Career descriptions are general starting points, not current labour-market research. Salaries, job growth, guaranteed employment, specific entrance deadlines, and institution eligibility are intentionally not estimated. Check official sources for your region.</div>`;
+      };
+      const renderCareerCompare = () => {
+        const options = careerCatalog.map((career) => `<option value="${escapeHTML(career.id)}">${escapeHTML(career.title)}</option>`).join("");
+        const selected = careerCompareIds.map((id) => careerCatalog.find((career) => career.id === id)).filter(Boolean);
+        return `${pageHeading("Compare paths, not your potential.", "Look at preparation, uncertainty, and preferences side by side. This tool does not predict which option will succeed.")}
+          <div class="career-compare">${[0, 1].map((index) => `<div class="field"><label for="careerCompare${index}">Path ${index + 1}</label><select id="careerCompare${index}" data-career-compare="${index}">${options}</select></div>`).join("")}</div>
+          <div class="career-compare" style="margin-top:12px">${selected.map((career) => `<section class="card card-pad"><span class="career-category">${escapeHTML(career.category)}</span><h2 class="section-title" style="margin-top:5px">${escapeHTML(career.title)}</h2><div class="career-fact" style="margin-top:10px"><strong>Possible route</strong><span>${escapeHTML(career.pathway)}</span></div><div class="career-fact" style="margin-top:9px"><strong>Skills to explore</strong><span>${escapeHTML(career.skills)}</span></div><div class="career-fact" style="margin-top:9px"><strong>Work style</strong><span>${escapeHTML(career.style)}</span></div><p><strong>Open questions to compare:</strong> time and cost of training, local entry rules, day-to-day work, financial risk, family circumstances, and alternative routes. Research these using current official sources before making plans.</p><button class="btn ghost small" data-career-open="${escapeHTML(career.id)}">Read full pathway</button></section>`).join("")}</div>
+          <div class="career-note" style="margin-top:14px"><strong>Shared skills travel across paths:</strong> communication, learning how to learn, careful reasoning, collaboration, and basic digital and financial literacy. Consider discussing important decisions with a trusted adult, teacher, or qualified career counsellor.</div>`;
+      };
+      const careerMilestoneTemplates = (career) => [
+        `Explore what ${career.title.toLowerCase()} work involves; list two questions to investigate.`,
+        `Build a small, safe learning project related to ${career.skills.split(",")[0].toLowerCase()}.`,
+        `Check current official course and eligibility information for your study stage (${profile.level}).`,
+        "Discuss options and uncertainties with a trusted adult, teacher, or qualified counsellor.",
+        "Review this plan later; change it whenever your interests or circumstances change."
+      ];
+      const addCareerPlan = (careerId) => {
+        const career = careerCatalog.find((item) => item.id === careerId);
+        if (!career) return false;
+        if (data.careerPlans.some((plan) => plan.careerId === careerId)) return false;
+        data.careerPlans.push({
+          id: crypto.randomUUID ? crypto.randomUUID() : `career-plan-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+          careerId,
+          milestones: careerMilestoneTemplates(career).map((text) => ({ text, done: false }))
+        });
+        persist();
+        return true;
+      };
+      const renderCareerRoadmap = () => {
+        const available = careerCatalog.map((career) => `<option value="${escapeHTML(career.id)}">${escapeHTML(career.title)}</option>`).join("");
+        const plans = data.careerPlans.map((plan) => {
+          const career = careerCatalog.find((item) => item.id === plan.careerId);
+          if (!career) return "";
+          return `<section class="card card-pad"><div class="section-head"><div><span class="career-category">Provisional plan · ${escapeHTML(profile.level)}</span><h2 class="section-title" style="margin-top:5px">${escapeHTML(career.title)}</h2></div><button class="btn ghost small" data-career-plan-remove="${escapeHTML(plan.id)}">Remove plan</button></div><div class="career-plan-list">${plan.milestones.map((milestone, index) => `<label class="career-plan-row"><input type="checkbox" data-career-milestone="${escapeHTML(plan.id)}" data-milestone-index="${index}" ${milestone.done ? "checked" : ""}><span>${escapeHTML(milestone.text)}</span></label>`).join("")}</div><p class="muted" style="font-size:11px">${plan.milestones.filter((item) => item.done).length} of ${plan.milestones.length} exploration steps complete. Suggested planning prompts, not guaranteed milestones.</p></section>`;
+        }).join("");
+        return `${pageHeading("Make a flexible next-step plan.", "Choose one or more careers to explore and turn curiosity into small, revisable actions.")}
+          <form id="careerRoadmapForm" class="row wrap card card-pad" style="margin-bottom:13px"><div class="field grow"><label for="careerPlanSelect">Career to explore</label><select id="careerPlanSelect" name="careerId">${available}</select></div><button class="btn" type="submit">Add exploration plan</button></form>
+          ${plans ? `<div class="stack">${plans}</div>` : `<div class="exam-empty"><strong>No career plan yet</strong><br>Choose one option to create a flexible exploration checklist.</div>`}
+          <div class="career-note" style="margin-top:14px">Milestones are adaptable suggestions based on your selected study level, not admission guarantees. This local prototype does not have verified course listings, live application deadlines, fee data, or scholarship matching. Check official institution and government sources.</div>`;
+      };
+      const careerFallbackAnswer = (question) => {
+        const matches = careerMatches().slice(0, 3);
+        const likely = matches.length
+          ? matches.map((match) => `${match.career.title} could be worth exploring because it overlaps with ${match.reasons.join(" and ")}. ${match.career.explore}`).join("\n\n")
+          : "Start by choosing a few interests in the assessment, then browse careers and compare their learning pathways. You do not need to settle on a career now.";
+        const safe = Number(profile.age) < 18 ? "\n\nBecause you are under 18, keep projects educational and low-cost; involve a trusted adult in any financial, legal, or contractual decisions." : "";
+        return `Rule-based exploration from your saved interests (not AI counselling):\n\n${likely}${safe}\n\nFor current qualifications, admissions, scholarships, fees, or job information, check official sources directly. This app has no live web research. Discuss major education decisions with a trusted adult, teacher, or qualified counsellor.`;
+      };
+      const renderCareerCounsellor = () => `${pageHeading("Talk through your next question.", "Ask for a balanced exploration plan. The guide can use your selected interests, but not private profile details.")}
+        <section class="card card-pad"><div class="career-note">AI suggestions are not official advice and are not based on live internet research. Do not share sensitive personal details. No name, age, school, or institution is sent. Major decisions deserve a conversation with a trusted adult, teacher, or qualified counsellor.</div>
+          <form id="careerCounsellorForm" class="tool-form" style="margin-top:14px"><div class="field"><label for="careerQuestion">What would you like to explore?</label><textarea id="careerQuestion" maxlength="1500" placeholder="e.g. I enjoy biology and helping people. What different study and career paths could I explore?" required></textarea></div><label class="career-check"><input id="shareCareerProfile" type="checkbox"><span>Include my saved interests and activity preferences (optional)</span></label><button class="btn" type="submit">Ask career guide</button></form>
+          <div id="careerCounsellorResponse" class="career-response" aria-live="polite">${escapeHTML(counsellorResponse || "Your response will appear here. If AI is unavailable, the page provides a transparent rule-based exploration prompt instead.")}</div>
+          <div class="row wrap" style="margin-top:12px"><a class="exam-source" href="https://www.ncs.gov.in/" target="_blank" rel="noopener noreferrer">National Career Service, India ↗</a><a class="exam-source" href="https://www.education.gov.in/" target="_blank" rel="noopener noreferrer">Ministry of Education, India ↗</a></div>
+        </section>`;
+      const renderCareer = () => {
+        const tabs = [
+          ["home", "Overview"], ["assessment", "Interests"], ["explore", "Explore careers"],
+          ["compare", "Compare paths"], ["roadmap", "My roadmap"], ["counsellor", "Career guide"]
+        ];
+        const content = {
+          home: renderCareerHome, assessment: renderCareerAssessment, explore: renderCareerExplore,
+          compare: renderCareerCompare, roadmap: renderCareerRoadmap, counsellor: renderCareerCounsellor
+        }[careerSection]();
+        return `<nav class="career-tabs" aria-label="Career Navigator sections">${tabs.map(([id, label]) => `<button type="button" class="career-tab ${careerSection === id ? "active" : ""}" data-career-section="${id}" ${careerSection === id ? 'aria-current="page"' : ""}>${label}</button>`).join("")}</nav>${content}`;
+      };
+      const renderPage = () => {
+        const page = {
+          home: renderHome, doubt: renderDoubt, flashcards: renderFlashcards, quiz: renderQuiz,
+          facts: renderFacts, analyze: renderAnalyze, homework: renderHomework,
+          timetable: () => renderSchedule("timetable"), teachers: () => renderSchedule("teachers"),
+          selfstudy: () => renderSchedule("selfstudy"), daily: renderDaily, exams: renderExams, career: renderCareer
+        }[currentPage];
+        const container = $("#pageContent");
+        container.innerHTML = page();
+        container.classList.remove("page-content-enter");
+        void container.offsetWidth;
+        container.classList.add("page-content-enter");
+        if (currentPage === "exams") renderExamList();
+      };
+      const startDaily = async (button) => {
+        const previous = previousStudyTopics();
+        const topic = previous.length ? previous.map((entry) => entry.topic).join("; ").slice(0, 180) : `${selectedSubject()} foundations`;
+        const subject = previous.length ? [...new Set(previous.map((entry) => entry.subject))].join(", ").slice(0, 70) : selectedSubject();
+        dailyState = { loading: true, topic, subject };
+        renderPage();
+        try {
+          const result = await requestAI("/api/learn", { mode: "quiz", subject, topic });
+          if (!Array.isArray(result.questions) || result.questions.length !== 5) throw new Error("The AI provider did not return five daily questions.");
+          dailyState = { started: true, index: 0, score: 0, topic, subject, questions: result.questions, feedback: "" };
+          renderPage();
+        } catch (error) {
+          dailyState = null;
+          renderPage();
+          showToast(error.message || "Could not prepare today's quiz.");
+        } finally {
+          if (button?.isConnected) button.disabled = false;
+        }
+      };
+      const finishDaily = () => {
+        const yesterday = new Date(); yesterday.setDate(yesterday.getDate() - 1);
+        data.streak = data.lastDaily === dateKey(yesterday) ? data.streak + 1 : data.lastDaily === todayKey() ? data.streak : 1;
+        data.lastDaily = todayKey();
+        data.dailyScore = dailyState.score;
+        data.dailyHistory = Array.isArray(data.dailyHistory) ? data.dailyHistory : [];
+        if (!data.dailyHistory.includes(data.lastDaily)) data.dailyHistory.push(data.lastDaily);
+        dailyState.done = true;
+        dailyState.started = false;
+        persist();
+        renderPage();
+      };
+
+      $("#welcomeForm").addEventListener("submit", (event) => {
+        event.preventDefault();
+        const form = new FormData(event.currentTarget);
+        profile = {
+          role: String(form.get("role") || "Other"),
+          name: String(form.get("name") || "").trim(),
+          age: Number(form.get("age")),
+          institution: String(form.get("institution") || "").trim(),
+          level: String(form.get("level") || "Other / lifelong learner")
+        };
+        if (!profile.name || !Number.isFinite(profile.age) || profile.age < 5 || profile.age > 120) {
+          showToast("Please enter your name and an age between 5 and 120.");
+          return;
+        }
+        persist();
+        enterApp();
+      });
+      document.addEventListener("click", async (event) => {
+        if (!event.target.closest(".nav-search-wrap")) closeSearch();
+        const recentTopicButton = event.target.closest("[data-open-topic]");
+        if (recentTopicButton) {
+          topicToAsk = recentTopicButton.dataset.openTopic;
+          setPage("doubt");
+          return;
+        }
+        const examSaveButton = event.target.closest("[data-exam-save]");
+        if (examSaveButton) {
+          const exam = data.exams.find((item) => item.id === examSaveButton.dataset.examSave);
+          if (exam) {
+            exam.saved = !exam.saved;
+            persist();
+            renderPage();
+            showToast(exam.saved ? "Exam saved to your list." : "Exam removed from saved items.");
+          }
+          return;
+        }
+        const examPlanButton = event.target.closest("[data-exam-plan]");
+        if (examPlanButton) {
+          const id = examPlanButton.dataset.examPlan;
+          if (examPlanId === id) examPlanId = "";
+          else {
+            examPlanId = id;
+            examPlanDays = data.examPlans[id]?.days || 7;
+          }
+          renderPage();
+          return;
+        }
+        const examEditButton = event.target.closest("[data-exam-edit]");
+        if (examEditButton) {
+          editingExamId = examEditButton.dataset.examEdit;
+          renderPage();
+          $("#examName").focus();
+          return;
+        }
+        if (event.target.closest("[data-exam-cancel-edit]")) {
+          editingExamId = "";
+          renderPage();
+          return;
+        }
+        const examDeleteButton = event.target.closest("[data-exam-delete]");
+        if (examDeleteButton) {
+          const exam = data.exams.find((item) => item.id === examDeleteButton.dataset.examDelete);
+          if (exam) confirmAction("Remove this exam?", `${exam.name} and its saved preparation progress will be removed from this browser.`, "Remove exam", () => {
+            data.exams = data.exams.filter((item) => item.id !== exam.id);
+            delete data.examPlans[exam.id];
+            delete data.examProgress[exam.id];
+            if (examPlanId === exam.id) examPlanId = "";
+            if (editingExamId === exam.id) editingExamId = "";
+            persist();
+            renderPage();
+            showToast("Exam removed from your list.");
+          });
+          return;
+        }
+        const examPracticeButton = event.target.closest("[data-exam-practice]");
+        if (examPracticeButton) {
+          const exam = data.exams.find((item) => item.id === examPracticeButton.dataset.examPractice);
+          if (!exam) return;
+          const subject = subjectOptions.includes(exam.subject) ? exam.subject : selectedSubject();
+          const topic = `${exam.name}${exam.topics ? `: ${exam.topics.replace(/\n/g, ", ")}` : ""}`.slice(0, 180);
+          await runAI(examPracticeButton, null, "Preparing mock quiz…", async () => {
+            $("#subjectSelect").value = subject;
+            data.subject = subject;
+            persist();
+            const result = await requestAI("/api/learn", { mode: "quiz", subject, topic });
+            if (!Array.isArray(result.questions) || result.questions.length !== 5) throw new Error("The AI provider did not return five practice questions.");
+            recordTopic(topic, subject);
+            quizState = { topic, questions: result.questions, index: 0, score: 0, done: false, feedback: "", examId: exam.id };
+            setPage("quiz");
+          });
+          return;
+        }
+        const pageButton = event.target.closest("[data-page]");
+        if (pageButton) {
+          setPage(pageButton.dataset.page);
+          $("#mobileMenu").classList.add("hidden");
+          $("#mobileMore").setAttribute("aria-expanded", "false");
+          return;
+        }
+        const subjectButton = event.target.closest("[data-subject]");
+        if (subjectButton) {
+          $("#subjectSelect").value = subjectButton.dataset.subject;
+          data.subject = subjectButton.dataset.subject;
+          persist();
+          setPage("doubt");
+          return;
+        }
+        if (event.target.closest("#resetProfile")) {
+          $("#profileName").value = profile.name;
+          $("#profileAge").value = profile.age;
+          $("#institution").value = profile.institution || "";
+          $("#levelSelect").value = profile.level;
+          const role = $(`input[name="role"][value="${CSS.escape(profile.role)}"]`);
+          if (role) role.checked = true;
+          $("#welcomeForm button[type='submit']").innerHTML = "Save profile <span aria-hidden=\"true\">→</span>";
+          $("#welcomeScreen").classList.remove("hidden");
+          $("#appShell").classList.add("hidden");
+          return;
+        }
+        if (event.target.closest("#signOut, #mobileSignOut")) {
+          confirmAction(
+            "Sign out of this profile?",
+            "Your saved study data will remain in this browser. This prototype has no authenticated accounts, so this only removes the local profile from this browser.",
+            "Sign out",
+            () => { void signOutLocalProfile(); }
+          );
+          $("#mobileMenu").classList.add("hidden");
+          $("#mobileMore").setAttribute("aria-expanded", "false");
+          return;
+        }
+        if (event.target.closest("#sidebarToggle")) {
+          const collapsed = $("#appShell").classList.toggle("sidebar-collapsed");
+          try {
+            localStorage.setItem("studyorbit.sidebar-collapsed.v1", JSON.stringify(collapsed));
+          } catch (error) {
+            console.error("Could not save sidebar preference.", error);
+            showToast("Sidebar preference could not be saved.");
+          }
+          const toggle = $("#sidebarToggle");
+          toggle.setAttribute("aria-pressed", String(collapsed));
+          toggle.setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
+          toggle.title = collapsed ? "Expand sidebar" : "Collapse sidebar";
+          return;
+        }
+        if (event.target.closest("#mobileMore")) {
+          const menu = $("#mobileMenu");
+          const isOpening = menu.classList.contains("hidden");
+          menu.classList.toggle("hidden", !isOpening);
+          $("#mobileMore").setAttribute("aria-expanded", String(isOpening));
+          return;
+        }
+        if (event.target.closest("#flipCard")) {
+          showingAnswer = !showingAnswer;
+          renderPage();
+          return;
+        }
+        if (event.target.closest("#nextCard")) {
+          if (cardIndex === activeCards.length - 1) { activeCards = []; cardIndex = 0; showingAnswer = false; showToast("Nice work. Your cards are ready to revisit any time."); }
+          else { cardIndex++; showingAnswer = false; }
+          renderPage();
+          return;
+        }
+        if (event.target.closest("#prevCard")) { cardIndex = Math.max(0, cardIndex - 1); showingAnswer = false; renderPage(); return; }
+        if (event.target.closest("#restartCards")) { cardIndex = 0; showingAnswer = false; renderPage(); return; }
+        if (event.target.closest("#newQuiz")) { quizState = null; renderPage(); return; }
+        if (event.target.closest("#startDaily")) { const button = event.target.closest("#startDaily"); button.disabled = true; await startDaily(button); return; }
+        const makeCardsButton = event.target.closest('[data-action="make-latest-cards"]');
+        if (makeCardsButton) {
+          if (!data.lastTopic) { showToast("Ask a question first to save a topic."); return; }
+          const topic = data.lastTopic;
+          const subject = data.lastStudied || selectedSubject();
+          await runAI(makeCardsButton, null, "Generating flashcards…", async () => {
+            const result = await requestAI("/api/learn", { mode: "flashcards", subject, topic });
+            activeCards = result.cards;
+            cardIndex = 0;
+            showingAnswer = false;
+            setPage("flashcards");
+          });
+          return;
+        }
+        const deleteButton = event.target.closest(".delete-schedule");
+        if (deleteButton) {
+          const kind = deleteButton.dataset.kind;
+          const index = Number(deleteButton.dataset.index);
+          if (data.schedules[kind] && Number.isInteger(index)) {
+            const entry = data.schedules[kind][index];
+            confirmAction(
+              "Remove this session?",
+              `${entry.topic} on ${entry.day} at ${entry.time} will be removed from your weekly plan.`,
+              "Remove session",
+              () => {
+                data.schedules[kind].splice(index, 1);
+                persist();
+                renderPage();
+                showToast("Session removed from your plan.");
+              }
+            );
+          }
+        }
+      });
+      $("#confirmDialog").addEventListener("close", (event) => {
+        if (event.target.returnValue === "confirm" && pendingConfirmation) pendingConfirmation();
+        pendingConfirmation = null;
+      });
+      $("#navSearch").addEventListener("input", updateSearch);
+      $("#navSearch").addEventListener("keydown", (event) => {
+        const options = $$("#searchResults [role='option']");
+        if (event.key === "Escape") { closeSearch(); $("#navSearch").blur(); return; }
+        if (event.key === "ArrowDown" && options.length) {
+          event.preventDefault();
+          searchSelection = (searchSelection + 1) % options.length;
+          options.forEach((option, index) => option.setAttribute("aria-selected", String(index === searchSelection)));
+          options[searchSelection].focus();
+          return;
+        }
+        if (event.key === "Enter" && options.length && searchSelection >= 0) {
+          event.preventDefault();
+          options[searchSelection].click();
+        }
+      });
+      $("#searchResults").addEventListener("keydown", (event) => {
+        if (event.key === "Escape") { closeSearch(); $("#navSearch").focus(); }
+      });
+      document.addEventListener("keydown", (event) => {
+        if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "k") {
+          event.preventDefault();
+          $("#navSearch").focus();
+          $("#navSearch").select();
+        }
+      });
+      $("#subjectSelect").addEventListener("change", (event) => {
+        data.subject = event.target.value;
+        persist();
+        generatedFacts = null;
+        if (currentPage === "facts") renderPage();
+        if (currentPage === "home") renderPage();
+        if (currentPage === "quiz" && quizState) { quizState = null; renderPage(); }
+      });
+      $("#pageContent").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        const form = event.target;
+        if (form.id === "doubtForm") {
+          const question = $("#doubtText").value.trim();
+          const topic = $("#doubtTopic").value.trim();
+          if (!question || !topic) { showToast("Add a topic and your question to continue."); return; }
+          const output = $("#doubtResponse");
+          await runAI(form, output, "Explaining…", async () => {
+            const result = await requestAI("/api/learn", { mode: "doubt", subject: selectedSubject(), topic, question });
+            recordTopic(topic);
+            renderPage();
+            displayAIText($("#doubtResponse"), result.text);
+          });
+          return;
+        }
+        if (form.id === "flashcardForm") {
+          const topic = $("#flashTopic").value.trim();
+          if (!topic) { showToast("Add a topic to make your flashcards."); return; }
+          await runAI(form, null, "Making cards…", async () => {
+            const subject = selectedSubject();
+            const result = await requestAI("/api/learn", { mode: "flashcards", subject, topic });
+            recordTopic(topic, subject);
+            activeCards = result.cards;
+            cardIndex = 0;
+            showingAnswer = false;
+            renderPage();
+          });
+          return;
+        }
+        if (form.id === "quizStartForm") {
+          const topic = $("#quizTopic").value.trim();
+          if (!topic) { showToast("Add a topic for your quiz."); return; }
+          await runAI(form, null, "Preparing quiz…", async () => {
+            const subject = selectedSubject();
+            const result = await requestAI("/api/learn", { mode: "quiz", subject, topic });
+            recordTopic(topic, subject);
+            quizState = { topic, questions: result.questions, index: 0, score: 0, done: false, feedback: "" };
+            renderPage();
+          });
+          return;
+        }
+        if (form.id === "quizAnswerForm") {
+          const choice = form.querySelector('input[name="answer"]:checked');
+          if (!choice) { showToast("Choose an answer to continue."); return; }
+          const question = quizState.questions[quizState.index];
+          const isCorrect = Number(choice.value) === question.answer;
+          quizState.score += Number(isCorrect);
+          quizState.feedback = `${isCorrect ? "That’s right." : "Not quite."} ${question.explain || "Keep practising and see what you notice."}`;
+          quizState.index++;
+          if (quizState.index === quizState.questions.length) {
+            quizState.done = true;
+            if (quizState.examId) {
+              const progress = data.examProgress[quizState.examId] || { attempts: 0, bestScore: 0 };
+              progress.attempts += 1;
+              progress.bestScore = Math.max(progress.bestScore, quizState.score);
+              progress.lastScore = quizState.score;
+              progress.lastDate = todayKey();
+              data.examProgress[quizState.examId] = progress;
+              persist();
+            }
+          }
+          renderPage();
+          return;
+        }
+        if (form.id === "analyzeForm") {
+          const text = $("#analyzeText").value.trim();
+          const file = $("#analyzeFile").files[0];
+          if (!text && !file) { showToast("Add some text or choose a file first."); return; }
+          await runAI(form, $("#analyzeResponse"), "Analyzing…", async () => {
+            const formData = new FormData();
+            formData.append("subject", selectedSubject());
+            let material = text;
+            let videoFrames = [];
+            if (file) {
+              if (file.type.startsWith("video/")) {
+                videoFrames = await sampleVideoFrames(file);
+                for (const frame of videoFrames) formData.append("frame", frame.file);
+                formData.append("frameTimestamps", videoFrames.map((frame) => frame.timestamp).join(", "));
+                $("#fileMeta").textContent = `${file.name} · sampled ${videoFrames.length} frames on this device. The video itself will not be uploaded.`;
+              } else if (file.type.startsWith("text/") || /\.(txt|md|csv|json|xml|html)$/i.test(file.name)) {
+                if (file.size > 1_000_000) throw new Error("Choose a text file smaller than 1 MB.");
+                material = `${material}${material ? "\n\n" : ""}${await file.text()}`.slice(0, 12_000);
+              } else {
+                if (file.size > 12 * 1024 * 1024) throw new Error("Choose an audio, image, or PDF file smaller than 12 MB.");
+                formData.append("file", file, file.name);
+              }
+            }
+            if (material) formData.append("text", material);
+            const result = await requestAI("/api/analyze", formData);
+            if (material) recordTopic(material.slice(0, 65));
+            displayAIText($("#analyzeResponse"), result.text);
+            showToast("Analysis ready.");
+          });
+          return;
+        }
+        if (form.id === "homeworkForm") {
+          const assignment = $("#homeworkText").value.trim();
+          const stuck = $("#stuckPoint").value.trim();
+          if (!assignment) { showToast("Share the assignment prompt to continue."); return; }
+          await runAI(form, $("#homeworkResponse"), "Working through it…", async () => {
+            const topic = assignment.slice(0, 100);
+            const result = await requestAI("/api/learn", {
+              mode: "homework", subject: selectedSubject(), topic, assignment, stuckPoint: stuck
+            });
+            recordTopic(topic);
+            displayAIText($("#homeworkResponse"), result.text);
+          });
+          return;
+        }
+        if (form.id === "examForm") {
+          const values = new FormData(form);
+          const name = String(values.get("name") || "").trim();
+          const examDate = String(values.get("examDate") || "");
+          const deadline = String(values.get("examDeadline") || "");
+          const sourceUrl = String(values.get("sourceUrl") || "").trim();
+          const verified = values.has("verified");
+          if (deadline && examDate && deadline > examDate) {
+            showToast("The registration deadline must be on or before the examination date.");
+            $("#examDeadline").focus();
+            return;
+          }
+          if (verified && !sourceUrl) {
+            showToast("Add the official source URL before marking these details as checked.");
+            $("#examSource").focus();
+            return;
+          }
+          if (sourceUrl) {
+            let parsedUrl;
+            try { parsedUrl = new URL(sourceUrl); }
+            catch { showToast("Enter a valid official information URL."); $("#examSource").focus(); return; }
+            if (!["http:", "https:"].includes(parsedUrl.protocol)) {
+              showToast("The source URL must use HTTP or HTTPS.");
+              $("#examSource").focus();
+              return;
+            }
+          }
+          const duplicate = data.exams.find((item) => item.id !== editingExamId && item.name.trim().toLowerCase() === name.toLowerCase());
+          if (duplicate) {
+            showToast("An exam with that name is already on your list. Edit the existing record instead.");
+            return;
+          }
+          const existing = editingExam();
+          const record = {
+            id: existing?.id || (crypto.randomUUID ? crypto.randomUUID() : `exam-${Date.now()}-${Math.random().toString(36).slice(2)}`),
+            name,
+            category: String(values.get("category") || "Other"),
+            level: String(values.get("level") || profile.level).trim(),
+            board: String(values.get("board") || "").trim(),
+            subject: String(values.get("subject") || selectedSubject()),
+            organizer: String(values.get("organizer") || "").trim(),
+            examDate,
+            deadline,
+            sourceUrl,
+            topics: String(values.get("topics") || "").trim(),
+            verified,
+            verifiedAt: verified ? todayKey() : "",
+            saved: existing?.saved || false
+          };
+          if (existing) data.exams = data.exams.map((item) => item.id === existing.id ? record : item);
+          else data.exams.push(record);
+          editingExamId = "";
+          persist();
+          renderPage();
+          showToast(existing ? "Exam details updated." : "Exam added to your list.");
+          return;
+        }
+        if (form.id === "factsForm") {
+          const topic = $("#factsTopic").value.trim();
+          if (!topic) { showToast("Add a topic for your facts."); return; }
+          await runAI(form, null, "Finding facts…", async () => {
+            const result = await requestAI("/api/learn", { mode: "facts", subject: selectedSubject(), topic });
+            generatedFacts = result.facts;
+            renderPage();
+          });
+          return;
+        }
+        if (form.matches("[data-schedule-form]")) {
+          const kind = form.dataset.scheduleForm;
+          const formData = new FormData(form);
+          const topic = String(formData.get("topic") || "").trim();
+          const time = String(formData.get("time") || "");
+          if (!topic || !time) { showToast("Add a topic and start time to save your session."); return; }
+          data.schedules[kind].push({ day: String(formData.get("day")), time, duration: String(formData.get("duration")), topic });
+          persist();
+          if (kind === "selfstudy") recordTopic(topic);
+          renderPage();
+          showToast("Session added to your weekly plan.");
+          return;
+        }
+        if (form.id === "dailyAnswerForm") {
+          const choice = form.querySelector('input[name="answer"]:checked');
+          if (!choice) { showToast("Choose an answer to continue."); return; }
+          const question = dailyState.questions[dailyState.index];
+          const correct = Number(choice.value) === question.answer;
+          dailyState.score += Number(correct);
+          dailyState.index++;
+          dailyState.feedback = `${correct ? "Correct!" : "Not quite—keep going."} ${question.explain || ""}`;
+          if (dailyState.index === dailyState.questions.length) { finishDaily(); return; }
+          renderPage();
+        }
+      });
+      $("#pageContent").addEventListener("change", (event) => {
+        if (event.target.id === "examCategoryFilter") {
+          examFilters.category = event.target.value;
+          renderExamList();
+        }
+        if (event.target.id === "examViewFilter") {
+          examFilters.view = event.target.value;
+          renderExamList();
+        }
+        if (event.target.matches("[data-exam-plan-days]")) {
+          examPlanDays = Number(event.target.value);
+          const id = event.target.dataset.examPlanDays;
+          const currentPlan = data.examPlans[id];
+          data.examPlans[id] = currentPlan?.days === examPlanDays
+            ? currentPlan
+            : { days: examPlanDays, completed: [] };
+          persist();
+          renderExamList();
+        }
+        const examTask = event.target.closest("[data-exam-task]");
+        if (examTask) {
+          const id = examTask.dataset.examTask;
+          const index = Number(examTask.dataset.taskIndex);
+          const plan = data.examPlans[id]?.days === examPlanDays
+            ? data.examPlans[id]
+            : { days: examPlanDays, completed: [] };
+          plan.completed = plan.completed.filter((day) => day !== index);
+          if (examTask.checked) plan.completed.push(index);
+          plan.completed.sort((a, b) => a - b);
+          data.examPlans[id] = plan;
+          persist();
+          renderExamList();
+        }
+        if (event.target.id === "analyzeFile") {
+          const file = event.target.files[0];
+          $("#fileMeta").textContent = file
+            ? `${file.name} · ${Math.max(1, Math.round(file.size / 1024))} KB selected. ${file.type.startsWith("video/") ? "Frames are sampled on this device; the video itself is not uploaded." : "This file will be sent to the configured AI provider for analysis."}`
+            : "Files are sent to the configured AI provider for analysis. Video files stay on this device; sampled frames are sent instead.";
+        }
+      });
+      $("#pageContent").addEventListener("input", (event) => {
+        if (event.target.id === "examSearch") {
+            examFilters.query = event.target.value.trim();
+            renderExamList();
+        }
+      });
+      const restoreData = (savedData) => {
+        if (!savedData || typeof savedData !== "object" || Array.isArray(savedData)) return;
+        data = {
+          ...defaultData,
+          ...savedData,
+          schedules: { ...defaultData.schedules, ...(savedData.schedules || {}) },
+          exams: Array.isArray(savedData.exams) ? savedData.exams : [],
+          examPlans: savedData.examPlans && typeof savedData.examPlans === "object" ? savedData.examPlans : {},
+          examProgress: savedData.examProgress && typeof savedData.examProgress === "object" ? savedData.examProgress : {}
+        };
+        if (!subjectOptions.includes(data.subject)) data.subject = defaultData.subject;
+        ["timetable", "teachers", "selfstudy"].forEach((key) => { if (!Array.isArray(data.schedules[key])) data.schedules[key] = []; });
+        if (!Array.isArray(data.studyLog)) data.studyLog = [];
+        if (!Array.isArray(data.dailyHistory)) data.dailyHistory = [];
+        if (data.lastDaily && !data.dailyHistory.includes(data.lastDaily)) data.dailyHistory.push(data.lastDaily);
+      };
+      const isValidProfile = (savedProfile) => savedProfile && typeof savedProfile === "object"
+        && !Array.isArray(savedProfile) && typeof savedProfile.name === "string" && savedProfile.name.trim();
+      const savedProfile = loadJson(PROFILE_KEY);
+      const savedData = loadJson(DATA_KEY);
+      restoreData(savedData);
+      if (isValidProfile(savedProfile)) profile = savedProfile;
+      const initializePersistence = async () => {
+        try {
+          const response = await fetch("/api/data", { credentials: "same-origin" });
+          if (!response.ok) throw new Error(`Database load returned HTTP ${response.status}.`);
+          const { state } = await response.json();
+          if (state) {
+            profile = isValidProfile(state.profile) ? state.profile : null;
+            restoreData(state.data);
+            try {
+              localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+              localStorage.setItem(DATA_KEY, JSON.stringify(data));
+            } catch (error) {
+              console.error("Could not cache database data in this browser.", error);
+            }
+          } else if (isValidProfile(savedProfile) || savedData) {
+            const migrationResponse = await fetch("/api/data", {
+              method: "PUT",
+              headers: { "content-type": "application/json" },
+              credentials: "same-origin",
+              body: JSON.stringify({ profile: isValidProfile(savedProfile) ? savedProfile : null, data })
+            });
+            if (!migrationResponse.ok) throw new Error(`Local data migration returned HTTP ${migrationResponse.status}.`);
+          }
+          databaseSyncReady = true;
+          if (profile) persist();
+        } catch (error) {
+          console.error("Could not initialize StudyOrbit database persistence.", error);
+          const staticPreview = location.port === "5500" || /HTTP 404|Not found/i.test(error.message);
+          showToast(staticPreview
+            ? "Live Server has no StudyOrbit backend. Start with `npm start` and open http://127.0.0.1:3001."
+            : "Couldn't connect to the local database. Your browser-saved data is still available.");
+        }
+        if (profile) enterApp();
+      };
+      void initializePersistence();
+      refreshAIStatus();
+    })();
+  </script>
+</body>
+</html>
