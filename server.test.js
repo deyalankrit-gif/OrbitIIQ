@@ -360,6 +360,31 @@ test("email delivery failures are reported without issuing a usable code", async
   }
 });
 
+test("Gmail app-password failures explain how to fix email delivery", async () => {
+  const failureServer = createServer({
+    databasePath: path.join(testDatabaseDirectory, "gmail-auth-failure.sqlite"),
+    sendVerificationCode: async () => {
+      const error = new Error("Invalid login");
+      error.code = "EAUTH";
+      error.responseCode = 534;
+      throw error;
+    }
+  });
+  const failurePort = await listen(failureServer);
+  const failureBase = `http://127.0.0.1:${failurePort}`;
+  try {
+    const response = await fetch(`${failureBase}/api/auth/request-code`, {
+      method: "POST",
+      headers: { "content-type": "application/json", origin: failureBase },
+      body: JSON.stringify({ email: "gmail-auth-failure@example.test", mode: "login" })
+    });
+    assert.equal(response.status, 502);
+    assert.match((await response.json()).error, /Google App Password.*not its regular Gmail password/i);
+  } finally {
+    await close(failureServer);
+  }
+});
+
 test("invalid or expired sessions are rejected and cleared", async () => {
   const response = await fetch(`${appBase}/api/auth/me`, {
     headers: { cookie: "OrbitIQ_session=invalid-session-token-value-which-is-long-enough" }

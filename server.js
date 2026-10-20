@@ -708,6 +708,9 @@ function createServer({ databasePath, sendVerificationCode } = {}) {
           database.deleteVerificationCode(email);
           if (error instanceof ApiError) throw error;
           console.error("Could not deliver a OrbitIQ verification email:", error.message);
+          if (error.code === "EAUTH" || error.responseCode === 534) {
+            throw new ApiError(502, "Gmail rejected the sign-in. Set GMAIL_APP_PASSWORD to a Google App Password generated for the GMAIL_USER account (not its regular Gmail password). Google requires 2-Step Verification for App Passwords.");
+          }
           throw new ApiError(502, "OrbitIQ could not send the verification email. Check the Gmail settings and try again.");
         }
         const browserId = getBrowserId(request) || randomUUID();
@@ -832,7 +835,7 @@ function createServer({ databasePath, sendVerificationCode } = {}) {
   return server;
 }
  
-if (require.main === module) {
+function startServer() {
   loadEnvFile();
   const port = Number(process.env.PORT || 3000);
   const host = process.env.HOST || (process.env.NODE_ENV === "production" ? "0.0.0.0" : "127.0.0.1");
@@ -841,7 +844,10 @@ if (require.main === module) {
     console.log(`OrbitIQ is running at http://${host}:${port}`);
     if (!process.env.GEMINI_API_KEY) console.warn("AI is not configured. Add GEMINI_API_KEY to .env and restart the server.");
   });
+  return server;
 }
- 
-module.exports = { createServer, loadEnvFile };
+
+if (require.main === module || !process.env.NODE_TEST_CONTEXT) startServer();
+
+module.exports = { createServer, loadEnvFile, startServer };
  

@@ -53,7 +53,7 @@ AI tools require a Google Gemini API key with access and available quota for the
 
 ## Deploy on Hostinger Node.js hosting
 
-The public website needs to run this Node.js app, not just publish `index.html` through static Git deployment. In Hostinger, create a Node.js app from this repository, select the repository root as the app directory, install dependencies with `npm install`, and use `npm start` as the startup command. Use Node.js 20 or newer and attach `orbitiq.online` to that Node.js app so its page and `/api/*` routes share the same domain.
+The public website needs to run this Node.js app, not just publish `index.html` through static Git deployment. In Hostinger, create a Node.js app from this repository, select the repository root as the app directory, install dependencies with `npm install`, and use `npm start` as the startup command. Use Node.js 20 or newer and attach `orbitiq.online` to that Node.js app so its page and `/api/*` routes share the same domain. `server.js` also starts when loaded directly by Hostinger's process manager.
 
 Set these as private environment variables in the Hostinger Node.js app settings (do not commit them or rely on the local `.env`):
 
@@ -63,6 +63,8 @@ Set these as private environment variables in the Hostinger Node.js app settings
 - `DATABASE_PATH` pointing to a writable, persistent location if Hostinger provides one. The default is `data/OrbitIQ.sqlite` inside the app directory; confirm Git deployments preserve that data.
 
 Let Hostinger provide `PORT`; set `HOST=0.0.0.0` if its app settings require an explicit host. After deployment, check `https://orbitiq.online/api/health`; it should return JSON rather than a 404. If Git deployment only publishes static files, switch the domain's website target to the Node.js app.
+
+`GMAIL_APP_PASSWORD` must be a Google App Password generated for the same `GMAIL_USER` account after enabling 2-Step Verification; a regular Gmail password is rejected. Set both values in Hostinger's environment variables and restart the app.
 
 OrbitIQ uses passwordless email verification for account creation and sign-in. A six-digit code is sent to the supplied email address and expires after 10 minutes; code verification is limited to five attempts. The browser receives a 30-day HttpOnly, SameSite session cookie, and the server stores only a hash of the session token. Study data and AI endpoints require a valid session. Sign out revokes the current session and clears the browser's cached account data. Sessions are device/browser-specific; signing out does not sign out other devices.
 
