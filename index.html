@@ -1333,7 +1333,7 @@
         }
         const contentType = response.headers.get("content-type") || "";
         if (response.status === 404 || response.status === 405 || !contentType.includes("application/json")) {
-          throw new Error("This page is running on a static preview, which cannot run AI tools. Start OrbitIQ with `npm start` and open http://127.0.0.1:3001 (not the :5500 Live Server page).");
+          throw new Error("This site is serving static files without the OrbitIQ backend. On Hostinger, run the repository root as a Node.js app with `npm start` and attach this domain to that app.");
         }
         let payload;
         try { payload = await response.json(); }
@@ -1368,8 +1368,8 @@
           const response = await fetch("/api/health");
           const contentType = response.headers.get("content-type") || "";
           if (response.status === 404 || response.status === 405 || !contentType.includes("application/json")) {
-            setAIStatus("error", "Open app server on :3001");
-            $("#aiStatus").title = "Live Server and the Next.js landing page do not provide the AI backend. Start the root app with `npm start` and open http://127.0.0.1:3001.";
+            setAIStatus("error", "Backend not deployed");
+            $("#aiStatus").title = "This site is serving static files. Configure Hostinger to run the repository root as a Node.js app with `npm start`, then attach this domain to the app.";
             return;
           }
           if (!response.ok) throw new Error("Server health check failed.");
@@ -2695,9 +2695,9 @@
           enterApp();
         } catch (error) {
           console.error("Could not initialize OrbitIQ database persistence.", error);
-          const staticPreview = location.port === "5500" || /HTTP 404|Not found/i.test(error.message);
-          showToast(staticPreview
-            ? "Live Server has no OrbitIQ backend. Start with `npm start` and open http://127.0.0.1:3001."
+          const backendMissing = location.port === "5500" || /HTTP 404|Not found|static files without the OrbitIQ backend/i.test(error.message);
+          showToast(backendMissing
+            ? "This Hostinger deployment only serves static files. Run the repository root as a Node.js app with `npm start` and attach orbitiq.online to that app."
             : "Could not verify your session. Check the server connection and try again.");
         }
       };
