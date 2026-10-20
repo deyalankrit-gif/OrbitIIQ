@@ -1184,6 +1184,22 @@
         element.textContent = message;
         element.classList.toggle("error", isError);
       };
+      const readApiResponse = async (response) => {
+        const contentType = response.headers.get("content-type") || "";
+        const body = await response.text();
+        if (contentType.includes("application/json") && body.trim()) {
+          try {
+            return JSON.parse(body);
+          } catch {}
+        }
+        if (location.port === "5500") {
+          throw new Error("VS Code Live Server only serves static files and cannot run OrbitIQ's API. Stop Live Server, run `npm start` from the OrbitIQ folder, then open http://127.0.0.1:3000 or https://orbitiq.online.");
+        }
+        if (response.status === 404 || response.status === 405 || !contentType.includes("application/json")) {
+          throw new Error("This site is serving static files without the OrbitIQ backend. Run the repository root as a Node.js app and attach this domain to that app.");
+        }
+        throw new Error(`The OrbitIQ server returned an empty or invalid response (HTTP ${response.status}). Please try again.`);
+      };
       const setAuthMode = (mode) => {
         authMode = mode;
         editingProfile = false;
@@ -1331,13 +1347,7 @@
           if (location.protocol === "file:") throw new Error("Start the OrbitIQ server with `npm start`, then open http://127.0.0.1:3000.");
           throw new Error("Could not reach the OrbitIQ server. Check that it is running and try again.");
         }
-        const contentType = response.headers.get("content-type") || "";
-        if (response.status === 404 || response.status === 405 || !contentType.includes("application/json")) {
-          throw new Error("This site is serving static files without the OrbitIQ backend. On Hostinger, run the repository root as a Node.js app with `npm start` and attach this domain to that app.");
-        }
-        let payload;
-        try { payload = await response.json(); }
-        catch { throw new Error("The OrbitIQ server returned an unreadable response."); }
+        const payload = await readApiResponse(response);
         if (response.status === 401) {
           showSignedOutScreen();
           showToast("Your session expired. Sign in again to continue.");
@@ -1366,14 +1376,8 @@
       const refreshAIStatus = async () => {
         try {
           const response = await fetch("/api/health");
-          const contentType = response.headers.get("content-type") || "";
-          if (response.status === 404 || response.status === 405 || !contentType.includes("application/json")) {
-            setAIStatus("error", "Backend not deployed");
-            $("#aiStatus").title = "This site is serving static files. Configure Hostinger to run the repository root as a Node.js app with `npm start`, then attach this domain to the app.";
-            return;
-          }
           if (!response.ok) throw new Error("Server health check failed.");
-          const health = await response.json();
+          const health = await readApiResponse(response);
           setAIStatus(health.configured ? "ready" : "error", health.configured ? `AI key configured · ${health.model}` : "AI setup required");
           $("#aiStatus").title = health.configured
             ? "An API key is configured. Provider access and available usage are confirmed when you submit a request."
@@ -2124,7 +2128,7 @@
           credentials: "same-origin",
           body: JSON.stringify({ email, mode: authMode, profile: authMode === "signup" ? nextProfile : undefined })
         }).then(async (response) => {
-          const result = await response.json();
+          const result = await readApiResponse(response);
           if (!response.ok) throw new Error(result.error || "Could not send a verification code.");
           pendingEmail = email;
           $("#verificationDescription").textContent = `Enter the six-digit code sent to ${email}. It expires in 10 minutes.`;
@@ -2159,7 +2163,7 @@
             credentials: "same-origin",
             body: JSON.stringify({ email: pendingEmail, code: $("#verificationCode").value.trim() })
           });
-          const result = await response.json();
+          const result = await readApiResponse(response);
           if (!response.ok) throw new Error(result.error || "Email verification failed.");
           profile = result.user.profile;
           restoreData(result.state?.data);
@@ -2678,7 +2682,7 @@
         try {
           const response = await fetch("/api/auth/me", { credentials: "same-origin", cache: "no-store" });
           if (!response.ok) throw new Error(`Account session check returned HTTP ${response.status}.`);
-          const result = await response.json();
+          const result = await readApiResponse(response);
           if (!result.user) {
             showSignedOutScreen("signup");
             return;
@@ -2706,7 +2710,7 @@
         try {
           const response = await fetch("/api/auth/me", { credentials: "same-origin", cache: "no-store" });
           if (!response.ok) throw new Error(`Account session check returned HTTP ${response.status}.`);
-          const result = await response.json();
+          const result = await readApiResponse(response);
           if (!result.user) {
             showSignedOutScreen();
             showToast("Your session expired. Sign in again to continue.");
