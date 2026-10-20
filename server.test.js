@@ -360,28 +360,32 @@ test("email delivery failures are reported without issuing a usable code", async
   }
 });
 
-test("Gmail app-password failures explain how to fix email delivery", async () => {
-  const failureServer = createServer({
-    databasePath: path.join(testDatabaseDirectory, "gmail-auth-failure.sqlite"),
-    sendVerificationCode: async () => {
-      const error = new Error("Invalid login");
-      error.code = "EAUTH";
-      error.responseCode = 534;
-      throw error;
-    }
-  });
-  const failurePort = await listen(failureServer);
-  const failureBase = `http://127.0.0.1:${failurePort}`;
-  try {
-    const response = await fetch(`${failureBase}/api/auth/request-code`, {
-      method: "POST",
-      headers: { "content-type": "application/json", origin: failureBase },
-      body: JSON.stringify({ email: "gmail-auth-failure@example.test", mode: "login" })
+test("Gmail authentication failures explain how to fix email delivery", async () => {
+  for (const responseCode of [534, 535]) {
+    const failureServer = createServer({
+      databasePath: path.join(testDatabaseDirectory, `gmail-auth-failure-${responseCode}.sqlite`),
+      sendVerificationCode: async () => {
+        const error = new Error("Invalid login");
+        error.code = "EAUTH";
+        error.responseCode = responseCode;
+        throw error;
+      }
     });
-    assert.equal(response.status, 502);
-    assert.match((await response.json()).error, /Google App Password.*not its regular Gmail password/i);
-  } finally {
-    await close(failureServer);
+    const failurePort = await listen(failureServer);
+    const failureBase = `http://127.0.0.1:${failurePort}`;
+    try {
+      const response = await fetch(`${failureBase}/api/auth/request-code`, {
+        method: "POST",
+        headers: { "content-type": "application/json", origin: failureBase },
+        body: JSON.stringify({ email: `gmail-auth-failure-${responseCode}@example.test`, mode: "login" })
+      });
+      const body = await response.json();
+      assert.equal(response.status, 502);
+      assert.match(body.error, /GMAIL_USER.*account that generated GMAIL_APP_PASSWORD/i);
+      assert.match(body.error, /not its regular Gmail password/i);
+    } finally {
+      await close(failureServer);
+    }
   }
 });
 

@@ -708,8 +708,8 @@ function createServer({ databasePath, sendVerificationCode } = {}) {
           database.deleteVerificationCode(email);
           if (error instanceof ApiError) throw error;
           console.error("Could not deliver a OrbitIQ verification email:", error.message);
-          if (error.code === "EAUTH" || error.responseCode === 534) {
-            throw new ApiError(502, "Gmail rejected the sign-in. Set GMAIL_APP_PASSWORD to a Google App Password generated for the GMAIL_USER account (not its regular Gmail password). Google requires 2-Step Verification for App Passwords.");
+          if (error.code === "EAUTH" || error.responseCode === 534 || error.responseCode === 535) {
+            throw new ApiError(502, "Gmail rejected the sign-in. In Hostinger, set GMAIL_USER to the Google account that generated GMAIL_APP_PASSWORD, then enter a current 16-character Google App Password for that same account (not its regular Gmail password). Google requires 2-Step Verification for App Passwords. If these settings already match, generate a new App Password and replace the Hostinger value.");
           }
           throw new ApiError(502, "OrbitIQ could not send the verification email. Check the Gmail settings and try again.");
         }
