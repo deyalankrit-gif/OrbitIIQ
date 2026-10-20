@@ -1,12 +1,13 @@
-"use strict";
 
+"use strict";
+ 
 const fs = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
 const { createHash, randomBytes, randomInt, scryptSync, timingSafeEqual, randomUUID } = require("node:crypto");
 const nodemailer = require("nodemailer");
 const { openDatabase } = require("./database");
-
+ 
 const ROOT = __dirname;
 const MAX_REQUEST_BYTES = 18 * 1024 * 1024;
 const MAX_TEXT_LENGTH = 12_000;
@@ -23,14 +24,14 @@ const MAX_VERIFICATION_ATTEMPTS = 5;
 const AUTH_RATE_WINDOW_MS = 15 * 60_000;
 const BROWSER_ID_PATTERN = /^[\da-f]{8}-[\da-f]{4}-[1-8][\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
 const rateLimits = new Map();
-
+ 
 class ApiError extends Error {
   constructor(status, message) {
     super(message);
     this.status = status;
   }
 }
-
+ 
 function loadEnvFile() {
   const envPath = path.join(ROOT, ".env");
   if (!fs.existsSync(envPath)) return;
@@ -41,7 +42,7 @@ function loadEnvFile() {
     process.env[match[1]] = match[2].replace(/^(['"])(.*)\1$/, "$2");
   }
 }
-
+ 
 function sendJson(response, status, body) {
   const payload = JSON.stringify(body);
   response.writeHead(status, {
@@ -52,11 +53,18 @@ function sendJson(response, status, body) {
   });
   response.end(payload);
 }
-
+ 
+// CHANGE 1: behind Hostinger's proxy every visitor shares one socket address,
+// so rate limits would apply to all users together. With TRUST_PROXY=true we
+// use the visitor's real IP from x-forwarded-for instead.
 function getClientKey(request) {
+  if (process.env.TRUST_PROXY === "true") {
+    const forwarded = String(request.headers["x-forwarded-for"] || "").split(",")[0].trim();
+    if (forwarded) return forwarded;
+  }
   return request.socket.remoteAddress || "unknown";
 }
-
+ 
 function checkRateLimit(request) {
   const now = Date.now();
   const key = getClientKey(request);
@@ -73,7 +81,7 @@ function checkRateLimit(request) {
     }
   }
 }
-
+ 
 async function readBody(request) {
   const contentLength = Number(request.headers["content-length"] || 0);
   if (contentLength > MAX_REQUEST_BYTES) throw new ApiError(413, "The request is too large. Reduce the text or upload size and try again.");
@@ -86,7 +94,7 @@ async function readBody(request) {
   }
   return Buffer.concat(chunks);
 }
-
+ 
 async function readJson(request) {
   const contentType = request.headers["content-type"] || "";
   if (!contentType.toLowerCase().startsWith("application/json")) {
@@ -104,7 +112,7 @@ async function readJson(request) {
   }
   return parsed;
 }
-
+ 
 async function readFormData(request) {
   const contentType = request.headers["content-type"] || "";
   if (!contentType.toLowerCase().startsWith("multipart/form-data;")) {
@@ -123,21 +131,21 @@ async function readFormData(request) {
     throw new ApiError(400, "The uploaded form could not be read.");
   }
 }
-
+ 
 function requiredText(value, label, maximum = 500) {
   if (typeof value !== "string" || !value.trim()) throw new ApiError(400, `${label} is required.`);
   const clean = value.trim();
   if (clean.length > maximum) throw new ApiError(413, `${label} must be ${maximum} characters or fewer.`);
   return clean;
 }
-
+ 
 function optionalText(value, label, maximum = 1000) {
   if (value == null || value === "") return "";
   if (typeof value !== "string") throw new ApiError(400, `${label} must be text.`);
   if (value.length > maximum) throw new ApiError(413, `${label} must be ${maximum} characters or fewer.`);
   return value.trim();
 }
-
+ 
 const schemas = {
   flashcards: {
     type: "object",
@@ -193,7 +201,7 @@ const schemas = {
     required: ["facts"]
   }
 };
-
+ 
 function geminiSchema(schema) {
   if (schema.type === "array") return { type: "ARRAY", items: geminiSchema(schema.items) };
   if (schema.type === "object") {
@@ -205,7 +213,7 @@ function geminiSchema(schema) {
   }
   return { type: { string: "STRING", integer: "INTEGER" }[schema.type] };
 }
-
+ 
 function responseText(responseData) {
   const text = responseData.candidates?.[0]?.content?.parts
     ?.filter((part) => typeof part.text === "string")
@@ -215,7 +223,7 @@ function responseText(responseData) {
   if (text) return text;
   throw new ApiError(502, "The AI provider returned an empty response. Please try again.");
 }
-
+ 
 function parseStructuredOutput(text, name) {
   let parsed;
   try {
@@ -239,12 +247,12 @@ function parseStructuredOutput(text, name) {
   }
   return parsed;
 }
-
+ 
 function providerUrl(model) {
   const base = (process.env.GEMINI_BASE_URL || "https://generativelanguage.googleapis.com/v1beta").replace(/\/+$/, "");
   return `${base}/models/${encodeURIComponent(model)}:generateContent`;
 }
-
+ 
 function providerError(status, message) {
   if (status === 400 || status === 401 || status === 403) {
     return new ApiError(502, "Google Gemini rejected the API key or request. Check GEMINI_API_KEY and confirm the selected model is available to your Google AI project.");
@@ -254,7 +262,7 @@ function providerError(status, message) {
   }
   return new ApiError(502, `Google Gemini returned an error (${status}): ${message.slice(0, 400)}`);
 }
-
+ 
 async function providerRequest(body) {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) throw new ApiError(503, "AI is not configured yet. Add GEMINI_API_KEY to .env and restart OrbitIQ.");
@@ -289,13 +297,13 @@ async function providerRequest(body) {
   }
   return response;
 }
-
+ 
 function inlineDataFromDataUrl(dataUrl) {
   const match = /^data:([^;,]+);base64,([A-Za-z\d+/]+=*)$/.exec(dataUrl);
   if (!match) throw new ApiError(400, "The uploaded file could not be prepared for Google Gemini.");
   return { inlineData: { mimeType: match[1], data: match[2] } };
 }
-
+ 
 function geminiParts(input) {
   if (typeof input === "string") return [{ text: input }];
   if (!Array.isArray(input)) throw new ApiError(400, "The AI request content is invalid.");
@@ -308,7 +316,7 @@ function geminiParts(input) {
     throw new ApiError(400, "The AI request contains an unsupported content type.");
   });
 }
-
+ 
 async function requestModel({ instructions, input, format }) {
   const body = {
     systemInstruction: { parts: [{ text: instructions }] },
@@ -329,7 +337,7 @@ async function requestModel({ instructions, input, format }) {
   const text = responseText(responseData);
   return format ? parseStructuredOutput(text, format) : { text };
 }
-
+ 
 function learningInstructions(mode, subject, topic, learnerLevel) {
   const levelContext = learnerLevel ? ` The learner's selected study level is ${learnerLevel}; adjust vocabulary and depth to suit it.` : "";
   const shared = `You are OrbitIQ, a patient, accurate tutor helping a ${subject} learner. Explain clearly, use short steps and concrete examples, distinguish uncertainty, and never claim to have seen content that was not supplied. The current topic is: ${topic}.${levelContext}`;
@@ -340,7 +348,7 @@ function learningInstructions(mode, subject, topic, learnerLevel) {
   if (mode === "quiz") return `${shared} Create exactly five accurate multiple-choice questions about the topic, each with exactly four distinct answer choices, one correct answer index from 0 to 3, and a brief explanation. Vary difficulty gently. Do not include trick questions or duplicate questions.`;
   return `${shared} Give exactly three engaging, accurate, age-appropriate facts about the topic, each with a short explanation. Avoid dubious superlatives.`;
 }
-
+ 
 async function handleLearn(request, response) {
   const body = await readJson(request);
   const mode = requiredText(body.mode, "Mode", 30);
@@ -374,11 +382,11 @@ async function handleLearn(request, response) {
   const result = await requestModel({ instructions, input, format });
   sendJson(response, 200, result);
 }
-
+ 
 function toDataUrl(file) {
   return `data:${file.type};base64,${file.bytes.toString("base64")}`;
 }
-
+ 
 async function handleAnalyze(request, response) {
   const form = await readFormData(request);
   const subject = requiredText(form.get("subject"), "Subject", 80);
@@ -466,7 +474,7 @@ async function handleAnalyze(request, response) {
   });
   sendJson(response, 200, result);
 }
-
+ 
 function securityHeaders(response) {
   response.setHeader("x-content-type-options", "nosniff");
   response.setHeader("referrer-policy", "no-referrer");
@@ -474,7 +482,7 @@ function securityHeaders(response) {
   response.setHeader("permissions-policy", "camera=(), microphone=(), geolocation=()");
   response.setHeader("content-security-policy", "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob:; connect-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none'");
 }
-
+ 
 function getBrowserId(request) {
   const cookies = Object.fromEntries((request.headers.cookie || "")
     .split(";")
@@ -483,7 +491,7 @@ function getBrowserId(request) {
   const browserId = cookies[BROWSER_COOKIE];
   return BROWSER_ID_PATTERN.test(browserId || "") ? browserId : null;
 }
-
+ 
 function getCookie(request, name) {
   return (request.headers.cookie || "")
     .split(";")
@@ -491,13 +499,13 @@ function getCookie(request, name) {
     .find((part) => part.startsWith(`${name}=`))
     ?.slice(name.length + 1) || null;
 }
-
+ 
 function isSecureRequest(request) {
   if (request.socket.encrypted) return true;
   if (process.env.TRUST_PROXY !== "true") return false;
   return (request.headers["x-forwarded-proto"] || "").split(",")[0].trim().toLowerCase() === "https";
 }
-
+ 
 function setBrowserCookie(request, response, browserId) {
   const secure = isSecureRequest(request) ? "; Secure" : "";
   response.setHeader(
@@ -505,20 +513,20 @@ function setBrowserCookie(request, response, browserId) {
     `${BROWSER_COOKIE}=${browserId}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000${secure}`
   );
 }
-
+ 
 function setSessionCookie(request, response, token, maxAge = SESSION_TTL_MS / 1000) {
   const secure = isSecureRequest(request) ? "; Secure" : "";
   response.setHeader("set-cookie", `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secure}`);
 }
-
+ 
 function clearSessionCookie(request, response) {
   const secure = isSecureRequest(request) ? "; Secure" : "";
   response.setHeader("set-cookie", `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secure}`);
 }
-
+ 
 const hashSessionToken = (token) => createHash("sha256").update(token).digest("hex");
 const hashVerificationCode = (code, salt) => scryptSync(code, salt, 32).toString("hex");
-
+ 
 function parseEmail(value) {
   if (typeof value !== "string") throw new ApiError(400, "Enter a valid email address.");
   const email = value.trim().toLowerCase();
@@ -527,7 +535,7 @@ function parseEmail(value) {
   }
   return email;
 }
-
+ 
 function parseAccountProfile(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) {
     throw new ApiError(400, "Complete the profile details to create an account.");
@@ -545,7 +553,7 @@ function parseAccountProfile(value) {
     level: optionalText(value.level, "Study level", 80) || "Other / lifelong learner"
   };
 }
-
+ 
 function createMailer() {
   return async ({ email, code, mode }) => {
     const user = process.env.GMAIL_USER;
@@ -566,7 +574,7 @@ function createMailer() {
     });
   };
 }
-
+ 
 function checkAuthRequestLimit(request, email, limits) {
   const now = Date.now();
   const keys = [
@@ -590,7 +598,7 @@ function checkAuthRequestLimit(request, email, limits) {
     }
   }
 }
-
+ 
 async function requireSession(request, response, database) {
   const token = getCookie(request, SESSION_COOKIE);
   if (!token || !/^[\w-]{40,60}$/.test(token)) throw new ApiError(401, "Sign in with your email to continue.");
@@ -603,18 +611,24 @@ async function requireSession(request, response, database) {
   }
   return { ...session, tokenHash };
 }
-
+ 
+// CHANGE 2: behind a trusted proxy, compare the Origin with the public host
+// (x-forwarded-host) so signup/verify/logout work on orbitiq.online.
 function sameOriginRequest(request) {
   const origin = request.headers.origin;
-  if (!origin || !request.headers.host) return false;
+  const forwardedHost = process.env.TRUST_PROXY === "true"
+    ? String(request.headers["x-forwarded-host"] || "").split(",")[0].trim()
+    : "";
+  const host = forwardedHost || request.headers.host;
+  if (!origin || !host) return false;
   try {
     const protocol = isSecureRequest(request) ? "https:" : "http:";
-    return new URL(origin).origin === `${protocol}//${request.headers.host}`;
+    return new URL(origin).origin === `${protocol}//${host}`;
   } catch {
     return false;
   }
 }
-
+ 
 function parseBrowserState(body) {
   const profile = body.profile;
   const data = body.data;
@@ -633,9 +647,11 @@ function parseBrowserState(body) {
   if (dataBytes > MAX_STUDY_DATA_BYTES) throw new ApiError(413, "Study data is too large.");
   return { profile, data };
 }
-
+ 
 function createServer({ databasePath, sendVerificationCode } = {}) {
-  const databasePromise = openDatabase(databasePath);
+  // CHANGE 3: DATABASE_PATH lets you keep the database file outside the
+  // project folder so redeploys don't erase accounts. Unset = old behavior.
+  const databasePromise = openDatabase(databasePath || process.env.DATABASE_PATH || undefined);
   const authRateLimits = new Map();
   const deliverVerificationCode = sendVerificationCode || createMailer();
   const server = http.createServer(async (request, response) => {
@@ -815,7 +831,7 @@ function createServer({ databasePath, sendVerificationCode } = {}) {
   });
   return server;
 }
-
+ 
 if (require.main === module) {
   loadEnvFile();
   const port = Number(process.env.PORT || 3000);
@@ -826,5 +842,6 @@ if (require.main === module) {
     if (!process.env.GEMINI_API_KEY) console.warn("AI is not configured. Add GEMINI_API_KEY to .env and restart the server.");
   });
 }
-
+ 
 module.exports = { createServer, loadEnvFile };
+ 
