@@ -3,7 +3,8 @@
 const fs = require("node:fs");
 const http = require("node:http");
 const path = require("node:path");
-const { randomUUID } = require("node:crypto");
+const { createHash, randomBytes, randomInt, scryptSync, timingSafeEqual, randomUUID } = require("node:crypto");
+const nodemailer = require("nodemailer");
 const { openDatabase } = require("./database");
 
 const ROOT = __dirname;
@@ -14,7 +15,12 @@ const RATE_LIMIT = 20;
 const RATE_WINDOW_MS = 60_000;
 const MAX_PROFILE_BYTES = 20 * 1024;
 const MAX_STUDY_DATA_BYTES = 4 * 1024 * 1024;
-const BROWSER_COOKIE = "studyorbit_browser";
+const BROWSER_COOKIE = "OrbitIQ_browser";
+const SESSION_COOKIE = "OrbitIQ_session";
+const VERIFICATION_CODE_TTL_MS = 10 * 60_000;
+const SESSION_TTL_MS = 30 * 24 * 60 * 60_000;
+const MAX_VERIFICATION_ATTEMPTS = 5;
+const AUTH_RATE_WINDOW_MS = 15 * 60_000;
 const BROWSER_ID_PATTERN = /^[\da-f]{8}-[\da-f]{4}-[1-8][\da-f]{3}-[89ab][\da-f]{3}-[\da-f]{12}$/i;
 const rateLimits = new Map();
 
@@ -251,7 +257,7 @@ function providerError(status, message) {
 
 async function providerRequest(body) {
   const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) throw new ApiError(503, "AI is not configured yet. Add GEMINI_API_KEY to .env and restart StudyOrbit.");
+  if (!apiKey) throw new ApiError(503, "AI is not configured yet. Add GEMINI_API_KEY to .env and restart OrbitIQ.");
   const model = process.env.GEMINI_MODEL || "gemini-2.5-flash";
   let response;
   try {
@@ -326,9 +332,9 @@ async function requestModel({ instructions, input, format }) {
 
 function learningInstructions(mode, subject, topic, learnerLevel) {
   const levelContext = learnerLevel ? ` The learner's selected study level is ${learnerLevel}; adjust vocabulary and depth to suit it.` : "";
-  const shared = `You are StudyOrbit, a patient, accurate tutor helping a ${subject} learner. Explain clearly, use short steps and concrete examples, distinguish uncertainty, and never claim to have seen content that was not supplied. The current topic is: ${topic}.${levelContext}`;
+  const shared = `You are OrbitIQ, a patient, accurate tutor helping a ${subject} learner. Explain clearly, use short steps and concrete examples, distinguish uncertainty, and never claim to have seen content that was not supplied. The current topic is: ${topic}.${levelContext}`;
   if (mode === "doubt") return `${shared} Answer the learner's specific question directly with an approachable explanation, a numbered reasoning path, and one short example or check-for-understanding. Do not invent course details.`;
-  if (mode === "career") return `You are StudyOrbit's educational career exploration counsellor. The learner's selected study level is ${learnerLevel || "not specified"}. Treat all career matches as possibilities to explore, not predictions, diagnoses, or decisions. Use only the learner-provided context and your general knowledge; you have no live web access and must not invent current admissions, scholarships, deadlines, costs, salaries, job statistics, citations, or official requirements. Clearly label general guidance versus facts that need checking. Explain why options may fit, discuss qualifications as pathways that vary by institution and region, offer alternatives and practical age-appropriate next steps, and recommend checking official institution, government, and professional-body sources. Never guarantee admission, employment, income, or business success. For minors, keep projects safe and advise adult involvement for financial, legal, or contractual matters. Encourage discussion with a parent, teacher, or qualified counsellor for major decisions.`;
+  if (mode === "career") return `You are OrbitIQ's educational career exploration counsellor. The learner's selected study level is ${learnerLevel || "not specified"}. Treat all career matches as possibilities to explore, not predictions, diagnoses, or decisions. Use only the learner-provided context and your general knowledge; you have no live web access and must not invent current admissions, scholarships, deadlines, costs, salaries, job statistics, citations, or official requirements. Clearly label general guidance versus facts that need checking. Explain why options may fit, discuss qualifications as pathways that vary by institution and region, offer alternatives and practical age-appropriate next steps, and recommend checking official institution, government, and professional-body sources. Never guarantee admission, employment, income, or business success. For minors, keep projects safe and advise adult involvement for financial, legal, or contractual matters. Encourage discussion with a parent, teacher, or qualified counsellor for major decisions.`;
   if (mode === "homework") return `${shared} The learner wants help understanding an assignment. Do not provide a complete answer, final result, or ready-to-submit work. Instead, explain what the task asks, identify relevant concepts, outline a few guided steps with questions for the learner, and include a different, simple worked example.`;
   if (mode === "flashcards") return `${shared} Create exactly three concise question-and-answer flashcards. Test important ideas rather than trivia. Make each answer self-contained and suitable for active recall.`;
   if (mode === "quiz") return `${shared} Create exactly five accurate multiple-choice questions about the topic, each with exactly four distinct answer choices, one correct answer index from 0 to 3, and a brief explanation. Vary difficulty gently. Do not include trick questions or duplicate questions.`;
@@ -455,7 +461,7 @@ async function handleAnalyze(request, response) {
       : "Explain the supplied study material in simple language. Identify its main idea, clarify unfamiliar terms or steps, and provide a short example. Base the explanation only on the supplied material and be clear about uncertainty.";
   content.push({ type: "input_text", text: prompt });
   const result = await requestModel({
-    instructions: `You are StudyOrbit, a patient ${subject} tutor. ${learnerLevel ? `The learner's selected study level is ${learnerLevel}; adjust vocabulary and depth to suit it. ` : ""}Help the learner understand the supplied material rather than merely restating it. Be accurate and clear.`,
+    instructions: `You are OrbitIQ, a patient ${subject} tutor. ${learnerLevel ? `The learner's selected study level is ${learnerLevel}; adjust vocabulary and depth to suit it. ` : ""}Help the learner understand the supplied material rather than merely restating it. Be accurate and clear.`,
     input: [{ role: "user", content }]
   });
   sendJson(response, 200, result);
@@ -478,12 +484,118 @@ function getBrowserId(request) {
   return BROWSER_ID_PATTERN.test(browserId || "") ? browserId : null;
 }
 
+function getCookie(request, name) {
+  return (request.headers.cookie || "")
+    .split(";")
+    .map((part) => part.trim())
+    .find((part) => part.startsWith(`${name}=`))
+    ?.slice(name.length + 1) || null;
+}
+
 function setBrowserCookie(request, response, browserId) {
   const secure = request.socket.encrypted ? "; Secure" : "";
   response.setHeader(
     "set-cookie",
     `${BROWSER_COOKIE}=${browserId}; Path=/; HttpOnly; SameSite=Strict; Max-Age=31536000${secure}`
   );
+}
+
+function setSessionCookie(request, response, token, maxAge = SESSION_TTL_MS / 1000) {
+  const secure = request.socket.encrypted ? "; Secure" : "";
+  response.setHeader("set-cookie", `${SESSION_COOKIE}=${token}; Path=/; HttpOnly; SameSite=Strict; Max-Age=${maxAge}${secure}`);
+}
+
+function clearSessionCookie(request, response) {
+  const secure = request.socket.encrypted ? "; Secure" : "";
+  response.setHeader("set-cookie", `${SESSION_COOKIE}=; Path=/; HttpOnly; SameSite=Strict; Max-Age=0${secure}`);
+}
+
+const hashSessionToken = (token) => createHash("sha256").update(token).digest("hex");
+const hashVerificationCode = (code, salt) => scryptSync(code, salt, 32).toString("hex");
+
+function parseEmail(value) {
+  if (typeof value !== "string") throw new ApiError(400, "Enter a valid email address.");
+  const email = value.trim().toLowerCase();
+  if (email.length > 254 || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    throw new ApiError(400, "Enter a valid email address.");
+  }
+  return email;
+}
+
+function parseAccountProfile(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    throw new ApiError(400, "Complete the profile details to create an account.");
+  }
+  const name = requiredText(value.name, "Name", 50);
+  const age = Number(value.age);
+  if (!Number.isInteger(age) || age < 5 || age > 120) throw new ApiError(400, "Enter an age between 5 and 120.");
+  const allowedRoles = ["School student", "College student", "Other"];
+  if (!allowedRoles.includes(value.role)) throw new ApiError(400, "Choose a valid account category.");
+  return {
+    role: value.role,
+    name,
+    age,
+    institution: optionalText(value.institution, "School or college", 120),
+    level: optionalText(value.level, "Study level", 80) || "Other / lifelong learner"
+  };
+}
+
+function createMailer() {
+  return async ({ email, code, mode }) => {
+    const user = process.env.GMAIL_USER;
+    const password = process.env.GMAIL_APP_PASSWORD;
+    if (!user || !password) {
+      throw new ApiError(503, "Email verification is not configured. Add GMAIL_USER and GMAIL_APP_PASSWORD to .env, then restart OrbitIQ.");
+    }
+    const transport = nodemailer.createTransport({
+      service: "gmail",
+      auth: { user, pass: password.replace(/\s/g, "") }
+    });
+    return transport.sendMail({
+      from: user,
+      to: email,
+      subject: "Your OrbitIQ verification code",
+      text: `Your OrbitIQ ${mode === "signup" ? "sign-up" : "sign-in"} verification code is ${code}. It expires in 10 minutes. If you did not request this code, you can ignore this email.`,
+      html: `<p>Your OrbitIQ ${mode === "signup" ? "sign-up" : "sign-in"} verification code is:</p><p style="font-size:24px;font-weight:bold;letter-spacing:5px">${code}</p><p>It expires in 10 minutes. If you did not request this code, you can ignore this email.</p>`
+    });
+  };
+}
+
+function checkAuthRequestLimit(request, email, limits) {
+  const now = Date.now();
+  const keys = [
+    { key: `email:${email}`, limit: 5 },
+    { key: `client:${getClientKey(request)}`, limit: 15 }
+  ];
+  for (const { key, limit } of keys) {
+    const current = limits.get(key);
+    if (!current || now - current.startedAt >= AUTH_RATE_WINDOW_MS) {
+      limits.set(key, { startedAt: now, count: 1 });
+    } else {
+      current.count += 1;
+      if (current.count > limit) {
+        throw new ApiError(429, "Too many code requests. Please wait and try again.");
+      }
+    }
+  }
+  if (limits.size > 5000) {
+    for (const [entryKey, entry] of limits) {
+      if (now - entry.startedAt >= AUTH_RATE_WINDOW_MS) limits.delete(entryKey);
+    }
+  }
+}
+
+async function requireSession(request, response, database) {
+  const token = getCookie(request, SESSION_COOKIE);
+  if (!token || !/^[\w-]{40,60}$/.test(token)) throw new ApiError(401, "Sign in with your email to continue.");
+  const tokenHash = hashSessionToken(token);
+  const session = database.getSession(tokenHash);
+  if (!session) {
+    database.deleteSession(tokenHash);
+    clearSessionCookie(request, response);
+    throw new ApiError(401, "Your session has expired. Sign in again to continue.");
+  }
+  return { ...session, tokenHash };
 }
 
 function sameOriginRequest(request) {
@@ -516,27 +628,135 @@ function parseBrowserState(body) {
   return { profile, data };
 }
 
-function createServer({ databasePath } = {}) {
+function createServer({ databasePath, sendVerificationCode } = {}) {
   const databasePromise = openDatabase(databasePath);
+  const authRateLimits = new Map();
+  const deliverVerificationCode = sendVerificationCode || createMailer();
   const server = http.createServer(async (request, response) => {
     securityHeaders(response);
     const url = new URL(request.url, "http://localhost");
     try {
-      if (url.pathname === "/api/data" && request.method === "GET") {
+      if (request.method === "GET" && url.pathname === "/api/auth/me") {
         const database = await databasePromise;
         const browserId = getBrowserId(request) || randomUUID();
-        const state = database.get(browserId);
         if (!getBrowserId(request)) setBrowserCookie(request, response, browserId);
-        return sendJson(response, 200, { state });
+        const token = getCookie(request, SESSION_COOKIE);
+        if (!token || !/^[\w-]{40,60}$/.test(token)) {
+          if (token) clearSessionCookie(request, response);
+          return sendJson(response, 200, { user: null });
+        }
+        const session = database.getSession(hashSessionToken(token));
+        if (!session) {
+          database.deleteSession(hashSessionToken(token));
+          clearSessionCookie(request, response);
+          return sendJson(response, 200, { user: null });
+        }
+        return sendJson(response, 200, {
+          user: { email: session.user.email, profile: session.user.profile },
+          state: database.getUserState(session.user.id)
+        });
+      }
+      if (request.method === "POST" && url.pathname === "/api/auth/request-code") {
+        if (!sameOriginRequest(request)) throw new ApiError(403, "Account requests can only be made from this application.");
+        const body = await readJson(request);
+        const email = parseEmail(body.email);
+        const mode = body.mode;
+        if (mode !== "signup" && mode !== "login") throw new ApiError(400, "Choose sign in or create account.");
+        const profile = mode === "signup" ? parseAccountProfile(body.profile) : null;
+        checkAuthRequestLimit(request, email, authRateLimits);
+        const database = await databasePromise;
+        const previous = database.getVerificationCode(email);
+        if (previous && Date.now() - previous.sentAt < 45_000) {
+          throw new ApiError(429, "Please wait a moment before requesting another code.");
+        }
+        const code = String(randomInt(100000, 1000000));
+        const salt = randomBytes(16).toString("hex");
+        const sentAt = Date.now();
+        database.saveVerificationCode(email, {
+          hash: hashVerificationCode(code, salt),
+          salt,
+          mode,
+          profile,
+          expiresAt: sentAt + VERIFICATION_CODE_TTL_MS,
+          sentAt
+        });
+        try {
+          await deliverVerificationCode({ email, code, mode });
+        } catch (error) {
+          database.deleteVerificationCode(email);
+          if (error instanceof ApiError) throw error;
+          console.error("Could not deliver a OrbitIQ verification email:", error.message);
+          throw new ApiError(502, "OrbitIQ could not send the verification email. Check the Gmail settings and try again.");
+        }
+        const browserId = getBrowserId(request) || randomUUID();
+        if (!getBrowserId(request)) setBrowserCookie(request, response, browserId);
+        return sendJson(response, 200, { message: "If this email can be used for this request, a verification code has been sent." });
+      }
+      if (request.method === "POST" && url.pathname === "/api/auth/verify-code") {
+        if (!sameOriginRequest(request)) throw new ApiError(403, "Verification can only be completed from this application.");
+        const body = await readJson(request);
+        const email = parseEmail(body.email);
+        if (typeof body.code !== "string" || !/^\d{6}$/.test(body.code)) throw new ApiError(400, "Enter the six-digit code from your email.");
+        const database = await databasePromise;
+        const record = database.getVerificationCode(email);
+        if (!record || record.expiresAt <= Date.now() || record.attempts >= MAX_VERIFICATION_ATTEMPTS) {
+          if (record) database.deleteVerificationCode(email);
+          throw new ApiError(401, "That code is invalid or expired. Request a new code and try again.");
+        }
+        const suppliedHash = Buffer.from(hashVerificationCode(body.code, record.salt), "hex");
+        const expectedHash = Buffer.from(record.hash, "hex");
+        if (suppliedHash.length !== expectedHash.length || !timingSafeEqual(suppliedHash, expectedHash)) {
+          database.incrementVerificationAttempts(email);
+          if (record.attempts + 1 >= MAX_VERIFICATION_ATTEMPTS) database.deleteVerificationCode(email);
+          throw new ApiError(401, "That code is invalid or expired. Request a new code and try again.");
+        }
+        let user = database.getUserByEmail(email);
+        if (record.mode === "signup") {
+          if (user) {
+            database.deleteVerificationCode(email);
+            throw new ApiError(409, "An account already exists for this email. Choose sign in instead.");
+          }
+          user = database.createUser(randomUUID(), email, record.profile);
+          const legacyState = getBrowserId(request) ? database.claimBrowserState(getBrowserId(request)) : null;
+          if (legacyState) database.saveUserState(user.id, legacyState.data);
+        } else if (!user) {
+          database.deleteVerificationCode(email);
+          throw new ApiError(401, "That code is invalid or expired. Check the email or create a new account.");
+        }
+        database.deleteVerificationCode(email);
+        const token = randomBytes(32).toString("base64url");
+        const expiresAt = Date.now() + SESSION_TTL_MS;
+        database.createSession(hashSessionToken(token), user.id, expiresAt);
+        setSessionCookie(request, response, token);
+        return sendJson(response, 200, {
+          user: { email: user.email, profile: user.profile },
+          state: database.getUserState(user.id)
+        });
+      }
+      if (request.method === "POST" && url.pathname === "/api/auth/logout") {
+        if (!sameOriginRequest(request)) throw new ApiError(403, "Sign out can only be completed from this application.");
+        const token = getCookie(request, SESSION_COOKIE);
+        if (token && /^[\w-]{40,60}$/.test(token)) {
+          const database = await databasePromise;
+          database.deleteSession(hashSessionToken(token));
+        }
+        clearSessionCookie(request, response);
+        return sendJson(response, 200, { ok: true });
+      }
+      if (url.pathname === "/api/data" && request.method === "GET") {
+        const database = await databasePromise;
+        const session = await requireSession(request, response, database);
+        return sendJson(response, 200, { state: { profile: session.user.profile, ...database.getUserState(session.user.id) } });
       }
       if (url.pathname === "/api/data" && request.method === "PUT") {
         if (!sameOriginRequest(request)) throw new ApiError(403, "Study data can only be saved from this application.");
-        const browserId = getBrowserId(request);
-        if (!browserId) throw new ApiError(401, "Reload StudyOrbit before saving your data.");
         const body = await readJson(request);
         const state = parseBrowserState(body);
         const database = await databasePromise;
-        database.save(browserId, state.profile, state.data);
+        const session = await requireSession(request, response, database);
+        if (!state.profile) throw new ApiError(400, "An account profile is required.");
+        database.updateUserProfile(session.user.id, parseAccountProfile(state.profile));
+        database.saveUserState(session.user.id, state.data);
         return sendJson(response, 200, { ok: true });
       }
       if (request.method === "GET" && url.pathname === "/api/health") {
@@ -546,8 +766,8 @@ function createServer({ databasePath } = {}) {
           model: process.env.GEMINI_MODEL || "gemini-2.5-flash"
         });
       }
-      if ((request.method === "GET" || request.method === "HEAD") && url.pathname === "/StudyOrbit_Favicon.png") {
-        const favicon = fs.readFileSync(path.join(ROOT, "StudyOrbit_Favicon.png"));
+      if ((request.method === "GET" || request.method === "HEAD") && url.pathname === "/OrbitIQ_Favicon.png") {
+        const favicon = fs.readFileSync(path.join(ROOT, "OrbitIQ_Favicon.png"));
         response.writeHead(200, {
           "content-type": "image/png",
           "content-length": favicon.length,
@@ -558,6 +778,8 @@ function createServer({ databasePath } = {}) {
         return;
       }
       if (request.method === "POST" && ["/api/learn", "/api/analyze"].includes(url.pathname)) {
+        const database = await databasePromise;
+        await requireSession(request, response, database);
         checkRateLimit(request);
         if (url.pathname === "/api/learn") return await handleLearn(request, response);
         return await handleAnalyze(request, response);
@@ -572,13 +794,13 @@ function createServer({ databasePath } = {}) {
       response.writeHead(200, {
         "content-type": "text/html; charset=utf-8",
         "content-length": file.length,
-        "cache-control": "no-cache"
+        "cache-control": "no-store"
       });
       response.end(request.method === "HEAD" ? undefined : file);
     } catch (error) {
       if (error instanceof ApiError) return sendJson(response, error.status, { error: error.message });
-      console.error("StudyOrbit request failed:", error);
-      return sendJson(response, 500, { error: "StudyOrbit encountered an unexpected server error. Please try again." });
+      console.error("OrbitIQ request failed:", error);
+      return sendJson(response, 500, { error: "OrbitIQ encountered an unexpected server error. Please try again." });
     }
   });
   server.on("close", async () => {
@@ -594,7 +816,7 @@ if (require.main === module) {
   const host = process.env.HOST || "127.0.0.1";
   const server = createServer();
   server.listen(port, host, () => {
-    console.log(`StudyOrbit is running at http://${host}:${port}`);
+    console.log(`OrbitIQ is running at http://${host}:${port}`);
     if (!process.env.GEMINI_API_KEY) console.warn("AI is not configured. Add GEMINI_API_KEY to .env and restart the server.");
   });
 }

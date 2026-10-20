@@ -3,7 +3,7 @@ export default function Home() {
     <main className="landing">
       <section className="landing-card">
         <div className="brand-mark" aria-hidden="true">✳</div>
-        <p className="eyebrow">StudyOrbit · Next.js app</p>
+        <p className="eyebrow">OrbitIQ · Next.js app</p>
         <h1>Your learning space starts here.</h1>
         <p className="intro">
           The Next.js application is running. Account features are not included
@@ -14,7 +14,7 @@ export default function Home() {
           <code>npm start</code>
         </div>
       </section>
-      <footer>StudyOrbit</footer>
+      <footer>OrbitIQ</footer>
     </main>
   );
 }

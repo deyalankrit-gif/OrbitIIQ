@@ -2,8 +2,8 @@ import type { Metadata } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "StudyOrbit",
-  description: "StudyOrbit student learning app.",
+  title: "OrbitIQ",
+  description: "OrbitIQ student learning app.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

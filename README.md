@@ -1,6 +1,6 @@
-# StudyOrbit
+# OrbitIQ
 
-StudyOrbit is a Node.js app. The browser talks to a same-origin backend; the backend keeps the Google Gemini API key off the client, forwards learning requests to Gemini, and persists the profile and study data in a local SQLite database.
+OrbitIQ is a Node.js app. The browser talks to a same-origin backend; the backend keeps the Google Gemini API key off the client, forwards learning requests to Gemini, and persists the profile and study data in a local SQLite database.
 
 ## Run locally
 
@@ -16,8 +16,8 @@ StudyOrbit is a Node.js app. The browser talks to a same-origin backend; the bac
    Copy-Item .env.example .env
    ```
 
-   Create a Google Gemini API key at <https://aistudio.google.com/app/apikey> and set `GEMINI_API_KEY` in `.env`. The default model is `gemini-2.5-flash`; optionally set `GEMINI_MODEL` and `DATABASE_PATH`. Never commit or share `.env`.
-4. Start StudyOrbit:
+   Create a Google Gemini API key at <https://aistudio.google.com/app/apikey> and set `GEMINI_API_KEY` in `.env`. To enable account registration and sign-in, set `GMAIL_USER` to a Gmail address and `GMAIL_APP_PASSWORD` to a Google App Password for that account. Do not use your normal Gmail password. App Passwords require Google 2-Step Verification; create one at <https://myaccount.google.com/apppasswords>. The default Gemini model is `gemini-2.5-flash`; optionally set `GEMINI_MODEL` and `DATABASE_PATH`. Never commit or share `.env`.
+4. Start OrbitIQ:
 
    ```powershell
    npm start
@@ -35,7 +35,9 @@ Then open the URL printed by the server (for example, <http://127.0.0.1:3001>). 
 
 AI tools require a Google Gemini API key with access and available quota for the selected model. The **AI key configured** status only confirms a key is present; the first AI request confirms provider access and usage. If Gemini reports a quota or rate limit, check the Google AI Studio project limits. `npm test` runs the backend tests without contacting an AI provider.
 
-The Sign out control removes the saved profile from this browser while retaining study data. This is a local-profile convenience, not authentication or a security boundary; the prototype has no user accounts or protected sessions.
+OrbitIQ uses passwordless email verification for account creation and sign-in. A six-digit code is sent to the supplied email address and expires after 10 minutes; code verification is limited to five attempts. The browser receives a 30-day HttpOnly, SameSite session cookie, and the server stores only a hash of the session token. Study data and AI endpoints require a valid session. Sign out revokes the current session and clears the browser's cached account data. Sessions are device/browser-specific; signing out does not sign out other devices.
+
+Account and study records, verification-code hashes, and sessions are stored in the local SQLite database. Back up and protect that file. Existing anonymous browser data in this database is associated with the first account created from that browser; signing in as a different account does not import or reveal that data. Gmail delivery must be configured before users can receive verification codes. For a public deployment, use HTTPS, a production email service, durable shared rate limiting, database encryption/backups, and operational monitoring; this local prototype is not hardened for internet-facing multi-user deployment.
 
 ## AI tools and uploaded files
 
@@ -46,12 +48,12 @@ The Sign out control removes the saved profile from this browser while retaining
 
 ## Exam Center
 
-The Exam Center is a personal tracker for school exams, Olympiads, scholarships, entrance opportunities, and coding/STEM competitions. Add exam dates, registration deadlines, an official source link, and any syllabus topics you have verified. Unknown dates remain unannounced; StudyOrbit does not infer or fabricate exam information.
+The Exam Center is a personal tracker for school exams, Olympiads, scholarships, entrance opportunities, and coding/STEM competitions. Add exam dates, registration deadlines, an official source link, and any syllabus topics you have verified. Unknown dates remain unannounced; OrbitIQ does not infer or fabricate exam information.
 
 Use the preparation-plan checklist to organize revision, or generate a five-question AI practice quiz from an exam's subject and saved topics. Exam records, saved items, plan progress, and quiz scores are saved in the local SQLite database and cached in this browser's local storage. On first launch, existing local browser data is imported into the database.
 
-The Exam Center does not yet collect live announcements, verify eligibility, send reminders, or synchronize across devices. The database is a local prototype store scoped by an opaque browser cookie; it is not user authentication, encryption, or a multi-user access-control system. The server binds to localhost by default. Keep the database file private and back it up if needed. Always check dates and requirements on the official organizer's website. A source can only be marked checked by the person entering the record; StudyOrbit does not independently validate it.
+The Exam Center does not yet collect live announcements, verify eligibility, send reminders, or synchronize across devices. Study data is scoped to the signed-in account in the local SQLite database. The server binds to localhost by default. Keep the database file private and back it up if needed. Always check dates and requirements on the official organizer's website. A source can only be marked checked by the person entering the record; OrbitIQ does not independently validate it.
 
 ## New Next.js foundation
 
-The replacement application is being developed separately in [`web/`](./web/README.md). The existing browser app remains available as the legacy prototype. The current prototype does not have accounts or a logout/session system.
+The replacement application is being developed separately in [`web/`](./web/README.md). The email account flow applies to the existing Node.js browser app, not the separate Next.js foundation.

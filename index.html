@@ -4,8 +4,8 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="theme-color" content="#080d18">
-  <link rel="icon" type="image/png" href="/StudyOrbit_Favicon.png">
-  <title>StudyOrbit — Your learning space</title>
+  <link rel="icon" type="image/png" href="/OrbitIQ_Favicon.png">
+  <title>OrbitIQ — Your learning space</title>
   <style>
     :root {
       color-scheme: dark;
@@ -172,6 +172,11 @@
     .welcome-form .stack { gap: 14px; }
     .welcome-form .btn { width: 100%; min-height: 46px; margin-top: 3px; }
     .fine-print { margin-top: 13px !important; font-size: 11px !important; line-height: 1.6; }
+    .auth-message { min-height: 0; margin: 0 !important; color: #a7b5ca; font-size: 12px !important; line-height: 1.5; }
+    .auth-message:empty { display: none; }
+    .auth-message.error { color: #ff9b9b; }
+    .auth-switch { padding: 4px; border: 0; background: transparent; color: #91b5ff; font-size: 12px; cursor: pointer; }
+    .auth-switch:hover { color: #c5d8ff; text-decoration: underline; }
 
     /* Application shell */
     .app-shell { min-height: 100vh; }
@@ -410,7 +415,7 @@
       .topbar-right > .muted { display: none; }
       .ai-status { gap: 0; padding: 6px; font-size: 0; }
     }
-    /* StudyOrbit visual system */
+    /* OrbitIQ visual system */
     :root {
       color-scheme: light;
       --bg: #f4f6fb;
@@ -512,6 +517,10 @@
     .role-option span { border-color: #e3e7f0; background: #f8f9fc; color: #67748b; transition: all .18s ease; }
     .role-option input:checked + span { border-color: #7476eb; background: #f0efff; color: #4d51c3; box-shadow: inset 0 0 0 1px #7476eb; }
     .fine-print { color: #79859a; }
+    .auth-message { color: #647188; }
+    .auth-message.error { color: #b42335; }
+    .auth-switch { color: #5558c7; }
+    .auth-switch:hover { color: #393ca4; }
     .sidebar {
       width: 256px;
       padding: 21px 14px 14px;
@@ -847,6 +856,8 @@
     :root[data-theme="dark"] .welcome-form { border-color: #26334a; background: rgba(16,24,39,.94); }
     :root[data-theme="dark"] .welcome-form h2, :root[data-theme="dark"] .field label { color: #dce6f7; }
     :root[data-theme="dark"] .welcome-form > p, :root[data-theme="dark"] .fine-print { color: #96a3b8; }
+    :root[data-theme="dark"] .auth-message { color: #aebbd0; }
+    :root[data-theme="dark"] .auth-message.error { color: #ff9b9b; }
     :root[data-theme="dark"] input, :root[data-theme="dark"] select, :root[data-theme="dark"] textarea { border-color: #344159; background-color: #0b1321; color: #edf3ff; }
     :root[data-theme="dark"] .role-option span { border-color: #344159; background: #0c1422; color: #aab8cc; }
     :root[data-theme="dark"] .role-option input:checked + span { border-color: #648fff; background: #182849; color: #dce8ff; }
@@ -919,11 +930,11 @@
   <script>
     (() => {
       try {
-        const preference = localStorage.getItem("studyorbit.theme.v1");
+        const preference = localStorage.getItem("OrbitIQ.theme.v1");
         const systemDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
         document.documentElement.dataset.theme = preference === "dark" || (preference === "system" && systemDark) ? "dark" : "light";
       } catch (error) {
-        console.error("Could not restore the StudyOrbit theme preference.", error);
+        console.error("Could not restore the OrbitIQ theme preference.", error);
         document.documentElement.dataset.theme = "light";
       }
     })();
@@ -932,7 +943,7 @@
 <body>
   <section id="welcomeScreen" class="welcome-screen">
     <div class="welcome-copy">
-      <div class="brand"><span class="brand-mark">✳</span> StudyOrbit</div>
+      <div class="brand"><span class="brand-mark">✳</span> OrbitIQ</div>
       <div class="eyebrow" style="margin-top:35px">A little more clarity, every day</div>
       <h1>Make learning<br>feel <span>lighter.</span></h1>
       <p>Your personal space to ask questions, make study tools, understand assignments, and build a routine that works for you.</p>
@@ -945,8 +956,10 @@
     </div>
     <form id="welcomeForm" class="welcome-form">
       <h2>Let's get to know you</h2>
-      <p>A few details help us make your study space feel like yours.</p>
+      <p id="authDescription">Create an account with your email. We’ll send a one-time code to verify it.</p>
       <div class="stack">
+        <div class="field" id="authEmailField"><label for="authEmail">Email address</label><input id="authEmail" name="email" type="email" placeholder="you@example.com" autocomplete="email" required maxlength="254"></div>
+        <div id="accountProfileFields" class="stack">
         <div class="field">
           <label>I’m joining as</label>
           <div class="role-options">
@@ -968,15 +981,28 @@
             <optgroup label="Other"><option>PhD / research</option><option>Other / lifelong learner</option><option>Teaching</option></optgroup>
           </select>
         </div>
-        <button class="btn" type="submit">Create my study space <span aria-hidden="true">→</span></button>
+        </div>
+        <button class="btn" id="authSubmit" type="submit">Create account <span aria-hidden="true">→</span></button>
+        <p id="authMessage" class="auth-message" role="status" aria-live="polite"></p>
+        <button class="auth-switch" id="authModeToggle" type="button">Already have an account? Sign in</button>
       </div>
-      <p class="fine-print">Your study data is saved to a local database and cached in this browser. This prototype has no accounts or cross-device sync. AI requests send your topic and question to the StudyOrbit server and configured AI provider; your name, age, and school are not included.</p>
+      <p class="fine-print">Your email is verified with a one-time code. Your profile and study data are saved to this OrbitIQ server. AI requests send your topic and question to the configured AI provider; your name, age, email, and school are not included.</p>
+    </form>
+    <form id="verificationForm" class="welcome-form hidden">
+      <h2>Check your email</h2>
+      <p id="verificationDescription">Enter the six-digit code we sent to your email address.</p>
+      <div class="stack">
+        <div class="field"><label for="verificationCode">Verification code</label><input id="verificationCode" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" minlength="6" maxlength="6" required></div>
+        <button class="btn" id="verifySubmit" type="submit">Verify email <span aria-hidden="true">→</span></button>
+        <p id="verificationMessage" class="auth-message" role="status" aria-live="polite"></p>
+        <button class="auth-switch" id="backToAuth" type="button">Use a different email or request a new code</button>
+      </div>
     </form>
   </section>
 
   <div id="appShell" class="app-shell hidden">
     <aside class="sidebar">
-      <div class="brand"><span class="brand-mark">✳</span><span class="brand-name">StudyOrbit</span><button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Collapse sidebar" aria-pressed="false" title="Collapse sidebar">‹</button></div>
+      <div class="brand"><span class="brand-mark">✳</span><span class="brand-name">OrbitIQ</span><button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Collapse sidebar" aria-pressed="false" title="Collapse sidebar">‹</button></div>
       <nav class="sidebar-scroll" aria-label="Main navigation">
         <div class="nav-list">
           <button class="nav-item active" data-page="home"><span class="nav-symbol" aria-hidden="true">⌂</span><span class="nav-text">Overview</span></button>
@@ -1002,7 +1028,7 @@
       </nav>
       <div class="sidebar-bottom">
         <button id="resetProfile" class="nav-item" title="Edit your profile"><span class="nav-symbol" aria-hidden="true">⚙</span><span class="nav-text">Edit your profile</span></button>
-        <button id="signOut" class="nav-item" title="Sign out of this local profile"><span class="nav-symbol" aria-hidden="true">⇥</span><span class="nav-text">Sign out</span></button>
+        <button id="signOut" class="nav-item" title="Sign out of your account"><span class="nav-symbol" aria-hidden="true">⇥</span><span class="nav-text">Sign out</span></button>
         <div class="profile-mini"><span class="avatar" id="sidebarAvatar">A</span><span class="profile-copy"><strong id="sidebarName">Student</strong><small id="sidebarLevel">Class 12</small></span></div>
       </div>
     </aside>
@@ -1056,9 +1082,9 @@
   <script>
     (() => {
       "use strict";
-      const PROFILE_KEY = "studyorbit.profile.v1";
-      const DATA_KEY = "studyorbit.data.v1";
-      const THEME_KEY = "studyorbit.theme.v1";
+      const PROFILE_KEY = "OrbitIQ.profile.v1";
+      const DATA_KEY = "OrbitIQ.data.v1";
+      const THEME_KEY = "OrbitIQ.theme.v1";
       const subjectOptions = ["Mathematics", "Physics", "Chemistry", "Biology", "English", "History", "Computer Science", "Other"];
       const pageNames = {
         home: "Overview", doubt: "Doubt clearer", flashcards: "Flashcard maker", quiz: "Quiz",
@@ -1085,6 +1111,9 @@
       let databaseSyncQueue = Promise.resolve();
       let databaseSyncReady = false;
       let databaseSyncWarningShown = false;
+      let authMode = "signup";
+      let editingProfile = false;
+      let pendingEmail = "";
       let topicToAsk = "";
       let pendingConfirmation = null;
       let searchSelection = -1;
@@ -1099,14 +1128,14 @@
       const todayKey = () => dateKey();
       const loadJson = (key) => {
         try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; }
-        catch (error) { console.error("Could not read saved StudyOrbit data.", error); return null; }
+        catch (error) { console.error("Could not read saved OrbitIQ data.", error); return null; }
       };
       const persist = () => {
         try {
           localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
           localStorage.setItem(DATA_KEY, JSON.stringify(data));
         } catch (error) {
-          console.error("Could not save StudyOrbit data.", error);
+          console.error("Could not save OrbitIQ data.", error);
           showToast("Your browser couldn't save this change. Check your storage settings.");
         }
         if (!databaseSyncReady) return;
@@ -1120,10 +1149,15 @@
               credentials: "same-origin",
               body: snapshot
             });
+            if (response.status === 401) {
+              showSignedOutScreen();
+              showToast("Your session expired. Sign in again to continue.");
+              return;
+            }
             if (!response.ok) throw new Error(`Database save returned HTTP ${response.status}.`);
             databaseSyncWarningShown = false;
           }).catch((error) => {
-            console.error("Could not sync StudyOrbit data to the local database.", error);
+            console.error("Could not sync OrbitIQ data to the local database.", error);
             if (!databaseSyncWarningShown) {
               showToast("Your change is saved in this browser, but could not sync to the local database.");
               databaseSyncWarningShown = true;
@@ -1137,6 +1171,63 @@
         toast.classList.remove("hidden");
         window.clearTimeout(toastTimer);
         toastTimer = window.setTimeout(() => toast.classList.add("hidden"), 3000);
+      };
+      const clearAuthMessages = () => {
+        ["#authMessage", "#verificationMessage"].forEach((selector) => {
+          const message = $(selector);
+          message.textContent = "";
+          message.classList.remove("error");
+        });
+      };
+      const displayAuthMessage = (selector, message, isError = false) => {
+        const element = $(selector);
+        element.textContent = message;
+        element.classList.toggle("error", isError);
+      };
+      const setAuthMode = (mode) => {
+        authMode = mode;
+        editingProfile = false;
+        $("#welcomeForm").reset();
+        $("#authEmailField").classList.remove("hidden");
+        $("#authEmail").required = true;
+        $("#accountProfileFields").classList.toggle("hidden", mode === "login");
+        $("#accountProfileFields").querySelectorAll("input, select").forEach((input) => {
+          input.required = mode === "signup" && (input.name === "name" || input.name === "age");
+        });
+        $("#welcomeForm h2").textContent = mode === "signup" ? "Create your account" : "Welcome back";
+        $("#authDescription").textContent = mode === "signup"
+          ? "Create an account with your email. We’ll send a one-time code to verify it."
+          : "Enter your account email and we’ll send a one-time sign-in code.";
+        $("#authSubmit").innerHTML = `${mode === "signup" ? "Create account" : "Send sign-in code"} <span aria-hidden="true">→</span>`;
+        $("#authModeToggle").classList.remove("hidden");
+        $("#authModeToggle").textContent = mode === "signup" ? "Already have an account? Sign in" : "New to OrbitIQ? Create an account";
+        $("#authMessage").textContent = "";
+      };
+      const showSignedOutScreen = (mode = "login") => {
+        databaseSyncReady = false;
+        profile = null;
+        data = { ...defaultData, schedules: { ...defaultData.schedules } };
+        currentPage = "home";
+        activeCards = [];
+        cardIndex = 0;
+        showingAnswer = false;
+        quizState = null;
+        dailyState = null;
+        generatedFacts = null;
+        counsellorResponse = "";
+        careerSection = "home";
+        topicToAsk = "";
+        try {
+          localStorage.removeItem(PROFILE_KEY);
+          localStorage.removeItem(DATA_KEY);
+        } catch (error) {
+          console.error("Could not clear cached OrbitIQ account data.", error);
+        }
+        $("#welcomeScreen").classList.remove("hidden");
+        $("#appShell").classList.add("hidden");
+        $("#verificationForm").classList.add("hidden");
+        $("#welcomeForm").classList.remove("hidden");
+        setAuthMode(mode);
       };
       const setAIStatus = (state, message) => {
         const status = $("#aiStatus");
@@ -1158,7 +1249,7 @@
         try {
           localStorage.setItem(THEME_KEY, normalized);
         } catch (error) {
-          console.error("Could not save the StudyOrbit theme preference.", error);
+          console.error("Could not save the OrbitIQ theme preference.", error);
           showToast("Your theme changed, but the preference could not be saved.");
         }
       };
@@ -1170,7 +1261,7 @@
       try {
         applyTheme(localStorage.getItem(THEME_KEY) || "light");
       } catch (error) {
-        console.error("Could not read the StudyOrbit theme preference.", error);
+        console.error("Could not read the OrbitIQ theme preference.", error);
         applyTheme("light");
       }
       const closeSearch = () => {
@@ -1237,16 +1328,20 @@
             body: body instanceof FormData ? body : JSON.stringify(body)
           });
         } catch (error) {
-          if (location.protocol === "file:") throw new Error("Start the StudyOrbit server with `npm start`, then open http://127.0.0.1:3000.");
-          throw new Error("Could not reach the StudyOrbit server. Check that it is running and try again.");
+          if (location.protocol === "file:") throw new Error("Start the OrbitIQ server with `npm start`, then open http://127.0.0.1:3000.");
+          throw new Error("Could not reach the OrbitIQ server. Check that it is running and try again.");
         }
         const contentType = response.headers.get("content-type") || "";
         if (response.status === 404 || response.status === 405 || !contentType.includes("application/json")) {
-          throw new Error("This page is running on a static preview, which cannot run AI tools. Start StudyOrbit with `npm start` and open http://127.0.0.1:3001 (not the :5500 Live Server page).");
+          throw new Error("This page is running on a static preview, which cannot run AI tools. Start OrbitIQ with `npm start` and open http://127.0.0.1:3001 (not the :5500 Live Server page).");
         }
         let payload;
         try { payload = await response.json(); }
-        catch { throw new Error("The StudyOrbit server returned an unreadable response."); }
+        catch { throw new Error("The OrbitIQ server returned an unreadable response."); }
+        if (response.status === 401) {
+          showSignedOutScreen();
+          showToast("Your session expired. Sign in again to continue.");
+        }
         if (!response.ok) throw new Error(payload.error || `Request failed (${response.status}).`);
         return payload;
       };
@@ -1282,10 +1377,10 @@
           setAIStatus(health.configured ? "ready" : "error", health.configured ? `AI key configured · ${health.model}` : "AI setup required");
           $("#aiStatus").title = health.configured
             ? "An API key is configured. Provider access and available usage are confirmed when you submit a request."
-            : "Add GEMINI_API_KEY to .env and restart StudyOrbit.";
+            : "Add GEMINI_API_KEY to .env and restart OrbitIQ.";
         } catch {
           setAIStatus("error", "Backend unavailable");
-          $("#aiStatus").title = "Start the root StudyOrbit app with `npm start` and open the URL shown in the terminal.";
+          $("#aiStatus").title = "Start the root OrbitIQ app with `npm start` and open the URL shown in the terminal.";
         }
       };
       const sampleVideoFrames = async (file) => {
@@ -1355,7 +1450,7 @@
         $("#sidebarAvatar").textContent = profile.name.trim().charAt(0).toUpperCase();
         $("#topAvatar").textContent = profile.name.trim().charAt(0).toUpperCase();
         $("#subjectSelect").value = data.subject;
-        const collapsed = loadJson("studyorbit.sidebar-collapsed.v1") === true;
+        const collapsed = loadJson("OrbitIQ.sidebar-collapsed.v1") === true;
         $("#appShell").classList.toggle("sidebar-collapsed", collapsed);
         $("#sidebarToggle").setAttribute("aria-pressed", String(collapsed));
         $("#sidebarToggle").setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
@@ -1364,39 +1459,23 @@
       };
       const signOutLocalProfile = async () => {
         if (!databaseSyncReady) {
-          showToast("StudyOrbit could not confirm the local save service. Your profile was not signed out.");
+          showToast("OrbitIQ could not confirm your session. You are still signed in.");
           return;
         }
         window.clearTimeout(databaseSyncTimer);
         await databaseSyncQueue;
         try {
-          const response = await fetch("/api/data", {
-            method: "PUT",
+          const response = await fetch("/api/auth/logout", {
+            method: "POST",
             headers: { "content-type": "application/json" },
             credentials: "same-origin",
-            body: JSON.stringify({ profile: null, data })
           });
-          if (!response.ok) throw new Error(`Profile sign-out returned HTTP ${response.status}.`);
-          localStorage.setItem(PROFILE_KEY, "null");
-          profile = null;
-          currentPage = "home";
-          activeCards = [];
-          cardIndex = 0;
-          showingAnswer = false;
-          quizState = null;
-          dailyState = null;
-          generatedFacts = null;
-          counsellorResponse = "";
-          careerSection = "home";
-          topicToAsk = "";
-          $("#welcomeForm").reset();
-          $("#welcomeForm button[type='submit']").innerHTML = "Create my study space <span aria-hidden=\"true\">→</span>";
-          $("#welcomeScreen").classList.remove("hidden");
-          $("#appShell").classList.add("hidden");
-          showToast("Signed out of this local profile. Study data remains saved in this browser; this app has no account authentication.");
+          if (!response.ok) throw new Error(`Sign-out returned HTTP ${response.status}.`);
+          showSignedOutScreen();
+          showToast("You have signed out. Your account data remains securely saved.");
         } catch (error) {
-          console.error("Could not sign out of the local StudyOrbit profile.", error);
-          showToast("Could not sign out because the local save service failed. Please try again.");
+          console.error("Could not sign out of the OrbitIQ account.", error);
+          showToast("Could not sign out because the server request failed. Please try again.");
         }
       };
       const setPage = (page) => {
@@ -1505,7 +1584,7 @@
                 <button class="quick-link" data-page="daily"><span class="quick-icon">◉</span><span><strong>Daily score</strong><small>A five-question practice check-in</small></span><span class="grow"></span>→</button>
                 <button class="quick-link" data-page="exams"><span class="quick-icon">✧</span><span><strong>Exam center</strong><small>Track dates and prepare with practice quizzes</small></span><span class="grow"></span>→</button>
               </div>
-              <div class="callout"><strong>Your study space, powered by AI</strong><br>Learning requests are sent to the configured AI provider by the StudyOrbit server. Avoid submitting personal or sensitive information.</div>
+              <div class="callout"><strong>Your study space, powered by AI</strong><br>Learning requests are sent to the configured AI provider by the OrbitIQ server. Avoid submitting personal or sensitive information.</div>
             </section>
           </div>
           <div class="grid activity-layout">
@@ -1738,7 +1817,7 @@
         const count = $("#examCount");
         if (count) count.textContent = `${exams.length} ${exams.length === 1 ? "exam" : "exams"}`;
         if (!exams.length) {
-          container.innerHTML = `<div class="exam-empty"><strong>${data.exams.length ? "No exams match these filters" : "Your exam list is ready when you are"}</strong><br>${data.exams.length ? "Try changing the search or filter." : "Add an exam or competition with dates from its official announcement. StudyOrbit will not guess dates."}</div>`;
+          container.innerHTML = `<div class="exam-empty"><strong>${data.exams.length ? "No exams match these filters" : "Your exam list is ready when you are"}</strong><br>${data.exams.length ? "Try changing the search or filter." : "Add an exam or competition with dates from its official announcement. OrbitIQ will not guess dates."}</div>`;
           return;
         }
         container.innerHTML = exams.map((exam) => {
@@ -1807,7 +1886,7 @@
                 ${dateInput("examDeadline", "Registration deadline", exam?.deadline)}
                 <div class="field wide"><label for="examSource">Official information URL</label><input type="url" id="examSource" name="sourceUrl" value="${escapeHTML(exam?.sourceUrl || "")}" maxlength="500" placeholder="https://..."><small class="muted">Add the official announcement or organizer page. Dates are never filled in automatically.</small></div>
                 <div class="field wide"><label for="examTopics">Syllabus / topics</label><textarea id="examTopics" name="topics" maxlength="2500" placeholder="Add verified syllabus topics, separated by commas or new lines">${escapeHTML(exam?.topics || "")}</textarea></div>
-                <label class="exam-plan-item wide"><input type="checkbox" name="verified" ${exam?.verified ? "checked" : ""}><span>I checked these details against the official source above. StudyOrbit does not independently verify them.</span></label>
+                <label class="exam-plan-item wide"><input type="checkbox" name="verified" ${exam?.verified ? "checked" : ""}><span>I checked these details against the official source above. OrbitIQ does not independently verify them.</span></label>
                 <div class="exam-actions wide"><button class="btn" type="submit">${exam ? "Save exam changes" : "Add to my exams"}</button>${exam ? `<button class="btn ghost" type="button" data-exam-cancel-edit>Cancel</button>` : ""}</div>
               </form>
             </section>
@@ -2005,20 +2084,100 @@
 
       $("#welcomeForm").addEventListener("submit", (event) => {
         event.preventDefault();
+        clearAuthMessages();
         const form = new FormData(event.currentTarget);
-        profile = {
+        const nextProfile = {
           role: String(form.get("role") || "Other"),
           name: String(form.get("name") || "").trim(),
           age: Number(form.get("age")),
           institution: String(form.get("institution") || "").trim(),
           level: String(form.get("level") || "Other / lifelong learner")
         };
-        if (!profile.name || !Number.isFinite(profile.age) || profile.age < 5 || profile.age > 120) {
-          showToast("Please enter your name and an age between 5 and 120.");
+        if (editingProfile) {
+          if (!nextProfile.name || !Number.isFinite(nextProfile.age) || nextProfile.age < 5 || nextProfile.age > 120) {
+            showToast("Please enter your name and an age between 5 and 120.");
+            return;
+          }
+          profile = nextProfile;
+          editingProfile = false;
+          persist();
+          $("#welcomeScreen").classList.add("hidden");
+          $("#appShell").classList.remove("hidden");
+          enterApp();
           return;
         }
-        persist();
-        enterApp();
+        const email = String(form.get("email") || "").trim();
+        if (!email) {
+          displayAuthMessage("#authMessage", "Enter your email address to continue.", true);
+          return;
+        }
+        if (authMode === "signup" && (!nextProfile.name || !Number.isFinite(nextProfile.age) || nextProfile.age < 5 || nextProfile.age > 120)) {
+          displayAuthMessage("#authMessage", "Enter your name and an age between 5 and 120.", true);
+          return;
+        }
+        const submitButton = $("#authSubmit");
+        submitButton.disabled = true;
+        displayAuthMessage("#authMessage", "Sending your verification code…");
+        fetch("/api/auth/request-code", {
+          method: "POST",
+          headers: { "content-type": "application/json" },
+          credentials: "same-origin",
+          body: JSON.stringify({ email, mode: authMode, profile: authMode === "signup" ? nextProfile : undefined })
+        }).then(async (response) => {
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Could not send a verification code.");
+          pendingEmail = email;
+          $("#verificationDescription").textContent = `Enter the six-digit code sent to ${email}. It expires in 10 minutes.`;
+          $("#verificationCode").value = "";
+          $("#welcomeForm").classList.add("hidden");
+          $("#verificationForm").classList.remove("hidden");
+          displayAuthMessage("#verificationMessage", result.message);
+        }).catch((error) => {
+          console.error("Could not request a OrbitIQ sign-in code:", error.message);
+          displayAuthMessage("#authMessage", error.message || "Could not send the code. Check your connection and try again.", true);
+        }).finally(() => {
+          submitButton.disabled = false;
+        });
+      });
+      $("#authModeToggle").addEventListener("click", () => setAuthMode(authMode === "signup" ? "login" : "signup"));
+      $("#backToAuth").addEventListener("click", () => {
+        $("#verificationForm").classList.add("hidden");
+        $("#welcomeForm").classList.remove("hidden");
+        clearAuthMessages();
+        $("#authEmail").value = pendingEmail;
+      });
+      $("#verificationForm").addEventListener("submit", async (event) => {
+        event.preventDefault();
+        clearAuthMessages();
+        const submitButton = $("#verifySubmit");
+        submitButton.disabled = true;
+        displayAuthMessage("#verificationMessage", "Verifying your email…");
+        try {
+          const response = await fetch("/api/auth/verify-code", {
+            method: "POST",
+            headers: { "content-type": "application/json" },
+            credentials: "same-origin",
+            body: JSON.stringify({ email: pendingEmail, code: $("#verificationCode").value.trim() })
+          });
+          const result = await response.json();
+          if (!response.ok) throw new Error(result.error || "Email verification failed.");
+          profile = result.user.profile;
+          restoreData(result.state?.data);
+          databaseSyncReady = true;
+          try {
+            localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+            localStorage.setItem(DATA_KEY, JSON.stringify(data));
+          } catch (cacheError) {
+            console.error("Could not cache signed-in OrbitIQ data.", cacheError);
+          }
+          $("#verificationForm").classList.add("hidden");
+          enterApp();
+        } catch (error) {
+          console.error("OrbitIQ email verification failed:", error.message);
+          displayAuthMessage("#verificationMessage", error.message || "Could not verify this code. Please try again.", true);
+        } finally {
+          submitButton.disabled = false;
+        }
       });
       document.addEventListener("click", async (event) => {
         if (!event.target.closest(".nav-search-wrap")) closeSearch();
@@ -2111,21 +2270,31 @@
           return;
         }
         if (event.target.closest("#resetProfile")) {
+          editingProfile = true;
           $("#profileName").value = profile.name;
           $("#profileAge").value = profile.age;
           $("#institution").value = profile.institution || "";
           $("#levelSelect").value = profile.level;
           const role = $(`input[name="role"][value="${CSS.escape(profile.role)}"]`);
           if (role) role.checked = true;
-          $("#welcomeForm button[type='submit']").innerHTML = "Save profile <span aria-hidden=\"true\">→</span>";
+          $("#authEmailField").classList.add("hidden");
+          $("#authEmail").required = false;
+          $("#accountProfileFields").classList.remove("hidden");
+          $("#accountProfileFields").querySelectorAll("input, select").forEach((input) => {
+            input.required = input.name === "name" || input.name === "age";
+          });
+          $("#authModeToggle").classList.add("hidden");
+          $("#welcomeForm h2").textContent = "Edit your profile";
+          $("#authDescription").textContent = "Update your study details.";
+          $("#authSubmit").innerHTML = "Save profile <span aria-hidden=\"true\">→</span>";
           $("#welcomeScreen").classList.remove("hidden");
           $("#appShell").classList.add("hidden");
           return;
         }
         if (event.target.closest("#signOut, #mobileSignOut")) {
           confirmAction(
-            "Sign out of this profile?",
-            "Your saved study data will remain in this browser. This prototype has no authenticated accounts, so this only removes the local profile from this browser.",
+            "Sign out of OrbitIQ?",
+            "Your server-side session will be ended. Your profile and study data will remain saved to your account.",
             "Sign out",
             () => { void signOutLocalProfile(); }
           );
@@ -2136,7 +2305,7 @@
         if (event.target.closest("#sidebarToggle")) {
           const collapsed = $("#appShell").classList.toggle("sidebar-collapsed");
           try {
-            localStorage.setItem("studyorbit.sidebar-collapsed.v1", JSON.stringify(collapsed));
+            localStorage.setItem("OrbitIQ.sidebar-collapsed.v1", JSON.stringify(collapsed));
           } catch (error) {
             console.error("Could not save sidebar preference.", error);
             showToast("Sidebar preference could not be saved.");
@@ -2505,47 +2674,61 @@
         if (!Array.isArray(data.dailyHistory)) data.dailyHistory = [];
         if (data.lastDaily && !data.dailyHistory.includes(data.lastDaily)) data.dailyHistory.push(data.lastDaily);
       };
-      const isValidProfile = (savedProfile) => savedProfile && typeof savedProfile === "object"
-        && !Array.isArray(savedProfile) && typeof savedProfile.name === "string" && savedProfile.name.trim();
-      const savedProfile = loadJson(PROFILE_KEY);
-      const savedData = loadJson(DATA_KEY);
-      restoreData(savedData);
-      if (isValidProfile(savedProfile)) profile = savedProfile;
       const initializePersistence = async () => {
         try {
-          const response = await fetch("/api/data", { credentials: "same-origin" });
-          if (!response.ok) throw new Error(`Database load returned HTTP ${response.status}.`);
-          const { state } = await response.json();
-          if (state) {
-            profile = isValidProfile(state.profile) ? state.profile : null;
-            restoreData(state.data);
-            try {
-              localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
-              localStorage.setItem(DATA_KEY, JSON.stringify(data));
-            } catch (error) {
-              console.error("Could not cache database data in this browser.", error);
-            }
-          } else if (isValidProfile(savedProfile) || savedData) {
-            const migrationResponse = await fetch("/api/data", {
-              method: "PUT",
-              headers: { "content-type": "application/json" },
-              credentials: "same-origin",
-              body: JSON.stringify({ profile: isValidProfile(savedProfile) ? savedProfile : null, data })
-            });
-            if (!migrationResponse.ok) throw new Error(`Local data migration returned HTTP ${migrationResponse.status}.`);
+          const response = await fetch("/api/auth/me", { credentials: "same-origin", cache: "no-store" });
+          if (!response.ok) throw new Error(`Account session check returned HTTP ${response.status}.`);
+          const result = await response.json();
+          if (!result.user) {
+            showSignedOutScreen("signup");
+            return;
+          }
+          profile = result.user.profile;
+          restoreData(result.state?.data);
+          try {
+            localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+            localStorage.setItem(DATA_KEY, JSON.stringify(data));
+          } catch (error) {
+            console.error("Could not cache the signed-in OrbitIQ account state.", error);
           }
           databaseSyncReady = true;
-          if (profile) persist();
+          enterApp();
         } catch (error) {
-          console.error("Could not initialize StudyOrbit database persistence.", error);
+          console.error("Could not initialize OrbitIQ database persistence.", error);
           const staticPreview = location.port === "5500" || /HTTP 404|Not found/i.test(error.message);
           showToast(staticPreview
-            ? "Live Server has no StudyOrbit backend. Start with `npm start` and open http://127.0.0.1:3001."
-            : "Couldn't connect to the local database. Your browser-saved data is still available.");
+            ? "Live Server has no OrbitIQ backend. Start with `npm start` and open http://127.0.0.1:3001."
+            : "Could not verify your session. Check the server connection and try again.");
         }
-        if (profile) enterApp();
+      };
+      const validateCurrentSession = async () => {
+        if (!profile) return;
+        try {
+          const response = await fetch("/api/auth/me", { credentials: "same-origin", cache: "no-store" });
+          if (!response.ok) throw new Error(`Account session check returned HTTP ${response.status}.`);
+          const result = await response.json();
+          if (!result.user) {
+            showSignedOutScreen();
+            showToast("Your session expired. Sign in again to continue.");
+          }
+        } catch (error) {
+          console.error("Could not revalidate the OrbitIQ session.", error);
+        }
       };
       void initializePersistence();
+      window.addEventListener("pageshow", (event) => {
+        if (event.persisted) void initializePersistence();
+      });
+      window.addEventListener("storage", (event) => {
+        if (event.key === PROFILE_KEY && event.newValue === null && profile) {
+          showSignedOutScreen();
+          showToast("You signed out in another tab.");
+        }
+      });
+      document.addEventListener("visibilitychange", () => {
+        if (document.visibilityState === "visible") void validateCurrentSession();
+      });
+      window.setInterval(() => void validateCurrentSession(), 60_000);
       refreshAIStatus();
     })();
   </script>

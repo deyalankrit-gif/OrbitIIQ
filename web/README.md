@@ -1,6 +1,6 @@
-# StudyOrbit Next.js app
+# OrbitIQ Next.js app
 
-This folder contains the separate Next.js App Router application. Authentication and related services are not configured. The existing StudyOrbit app remains in the workspace root.
+This folder contains the separate Next.js App Router application. Authentication and related services are not configured. The existing OrbitIQ app remains in the workspace root.
 
 ## Run the Next.js app
 
@@ -13,9 +13,9 @@ npm run dev
 
 Open <http://localhost:3000>. Next.js and its development cache run from this `web` folder.
 
-## Run the existing StudyOrbit app
+## Run the existing OrbitIQ app
 
-From `D:\StudyOrbit`:
+From `D:\OrbitIQ`:
 
 ```powershell
 npm start

@@ -1,8 +1,8 @@
 {
-  "name": "studyorbit",
+  "name": "OrbitIQ",
   "version": "1.0.0",
   "private": true,
-  "description": "StudyOrbit student learning assistant",
+  "description": "OrbitIQ student learning assistant",
   "scripts": {
     "start": "node server.js",
     "test": "node --test server.test.js"
@@ -11,6 +11,7 @@
     "node": ">=20"
   },
   "dependencies": {
+    "nodemailer": "^10.1.7",
     "sql.js": "^1.15.1"
   }
 }
