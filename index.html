@@ -741,7 +741,7 @@
     button.activity-item:hover { border-color: #dadaf5; background: #fbfaff; }
     .activity-icon { display: grid; width: 32px; height: 32px; flex: 0 0 auto; place-items: center; border-radius: 10px; background: #f0efff; color: #5f63d6; }
     .activity-item strong { display: block; overflow: hidden; color: #394760; font-size: 11px; text-overflow: ellipsis; white-space: nowrap; }
-    .activity-item small { color: #8893a6; font-size: 10px; }
+    .activity-item small { display: block; color: #8893a6; font-size: 10px; }
     .empty-card { display: grid; min-height: 132px; place-content: center; gap: 4px; padding: 20px; border: 1px dashed #dfe3ed; border-radius: 13px; color: #7b879b; text-align: center; font-size: 12px; }
     .empty-card strong { color: #4e5b72; }
     .confirmation { max-width: 360px; border: 1px solid #e4e7f0; border-radius: 16px; background: #fff; color: #27354e; box-shadow: 0 24px 70px rgba(26,37,67,.23); }
@@ -1023,6 +1023,8 @@
           <button class="nav-item" data-page="selfstudy" title="Self study"><span class="nav-symbol" aria-hidden="true">◷</span><span class="nav-text">Self study</span></button>
           <button class="nav-item" data-page="daily" title="Daily score"><span class="nav-symbol" aria-hidden="true">◉</span><span class="nav-text">Daily score</span></button>
           <button class="nav-item" data-page="exams" title="Exam center"><span class="nav-symbol" aria-hidden="true">✧</span><span class="nav-text">Exam center</span></button>
+          <button class="nav-item" data-page="reminders" title="Academic reminders"><span class="nav-symbol" aria-hidden="true">◷</span><span class="nav-text">Reminders</span></button>
+          <button class="nav-item" data-page="subjects" title="Subject management"><span class="nav-symbol" aria-hidden="true">∑</span><span class="nav-text">Subjects</span></button>
           <button class="nav-item" data-page="career" title="Career navigator"><span class="nav-symbol" aria-hidden="true">⌖</span><span class="nav-text">Career navigator</span></button>
         </div>
       </nav>
@@ -1047,6 +1049,8 @@
         <button data-page="teachers">♧ &nbsp; Teachers</button>
         <button data-page="selfstudy">◷ &nbsp; Self study</button>
         <button data-page="exams">✧ &nbsp; Exam center</button>
+        <button data-page="reminders">◷ &nbsp; Reminders</button>
+        <button data-page="subjects">∑ &nbsp; Subjects</button>
         <button data-page="career">⌖ &nbsp; Career navigator</button>
         <button id="mobileSignOut">⇥ &nbsp; Sign out</button>
       </div>
@@ -1085,17 +1089,47 @@
       const PROFILE_KEY = "OrbitIQ.profile.v1";
       const DATA_KEY = "OrbitIQ.data.v1";
       const THEME_KEY = "OrbitIQ.theme.v1";
-      const subjectOptions = ["Mathematics", "Physics", "Chemistry", "Biology", "English", "History", "Computer Science", "Other"];
+      const defaultSubjectNames = [
+        "History", "Geography", "Economics", "Political Science", "Philosophy", "Sociology", "Psychology",
+        "English", "Bengali", "Hindi", "Other Regional Language", "Mathematics", "Statistics", "Physics",
+        "Chemistry", "Biology", "Computer Science", "Environmental Science", "Accountancy", "Business Studies",
+        "Commerce", "Civics", "Education", "Physical Education", "Art and Fine Arts", "Engineering and Technical Subjects",
+        "Law and Legal Studies", "Vocational and Professional Studies", "Other"
+      ];
+      const subjectCategory = (name) => ({
+        History: "Humanities", Geography: "Social sciences", Economics: "Social sciences",
+        "Political Science": "Social sciences", Philosophy: "Humanities", Sociology: "Social sciences",
+        Psychology: "Social sciences", English: "Languages", Bengali: "Languages", Hindi: "Languages",
+        "Other Regional Language": "Languages", Mathematics: "STEM", Statistics: "STEM",
+        Physics: "STEM", Chemistry: "STEM", Biology: "STEM", "Computer Science": "STEM",
+        "Environmental Science": "STEM", Accountancy: "Commerce", "Business Studies": "Commerce",
+        Commerce: "Commerce", Civics: "Social sciences", Education: "Humanities",
+        "Physical Education": "Health and physical education", "Art and Fine Arts": "Arts",
+        "Engineering and Technical Subjects": "Engineering and technology", "Law and Legal Studies": "Law",
+        "Vocational and Professional Studies": "Vocational", Other: "Other"
+      }[name] || "Custom");
+      const createDefaultSubjects = () => defaultSubjectNames.map((name) => ({
+        id: `subject-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}`,
+        name,
+        category: subjectCategory(name),
+        boards: [],
+        levels: [],
+        streams: [],
+        semesters: [],
+        specializations: []
+      }));
       const pageNames = {
         home: "Overview", doubt: "Doubt clearer", flashcards: "Flashcard maker", quiz: "Quiz",
-        facts: "Fun facts", analyze: "Analyze material", homework: "Homework help",
+        facts: "Fun facts", analyze: "Analyze material", homework: "Homework help", reminders: "Reminders", subjects: "Subjects",
         timetable: "Time table", teachers: "Teachers", selfstudy: "Self study", daily: "Daily score",
         exams: "Exam center", career: "Career navigator"
       };
       const icons = { Mathematics: "∑", Physics: "⌁", Chemistry: "⚗", Biology: "♧", English: "Aa", History: "◷", "Computer Science": "⌘", Other: "✦" };
       const defaultData = {
+        subjects: createDefaultSubjects(),
         subject: "Mathematics", lastTopic: "", lastStudied: "", schedules: { timetable: [], teachers: [], selfstudy: [] },
         streak: 0, lastDaily: "", dailyScore: null, dailyHistory: [], studyLog: [], exams: [], examPlans: {}, examProgress: {},
+        academicEvents: [], sentReminderKeys: [],
         careerProfile: null, careerPlans: [], savedCareers: []
       };
       let profile = null;
@@ -1118,6 +1152,7 @@
       let pendingConfirmation = null;
       let searchSelection = -1;
       let editingExamId = "";
+      let editingSubjectId = "";
       let examPlanId = "";
       let examPlanDays = 7;
       let themePreference = "light";
@@ -1126,6 +1161,11 @@
       const escapeHTML = (value) => String(value ?? "").replace(/[&<>"']/g, (char) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
       const dateKey = (date = new Date()) => `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, "0")}-${String(date.getDate()).padStart(2, "0")}`;
       const todayKey = () => dateKey();
+      const subjectNames = () => (data.subjects || []).map((subject) => subject.name).filter(Boolean);
+      const subjectSelectOptions = (selected = data.subject) => subjectNames()
+        .map((subject) => `<option value="${escapeHTML(subject)}" ${subject === selected ? "selected" : ""}>${escapeHTML(subject)}</option>`)
+        .join("");
+      const splitMetadata = (value) => String(value || "").split(",").map((item) => item.trim()).filter(Boolean);
       const loadJson = (key) => {
         try { const raw = localStorage.getItem(key); return raw ? JSON.parse(raw) : null; }
         catch (error) { console.error("Could not read saved OrbitIQ data.", error); return null; }
@@ -1453,6 +1493,8 @@
         $("#sidebarLevel").textContent = profile.level;
         $("#sidebarAvatar").textContent = profile.name.trim().charAt(0).toUpperCase();
         $("#topAvatar").textContent = profile.name.trim().charAt(0).toUpperCase();
+        if (!subjectNames().includes(data.subject)) data.subject = subjectNames()[0] || "Mathematics";
+        $("#subjectSelect").innerHTML = subjectSelectOptions();
         $("#subjectSelect").value = data.subject;
         const collapsed = loadJson("OrbitIQ.sidebar-collapsed.v1") === true;
         $("#appShell").classList.toggle("sidebar-collapsed", collapsed);
@@ -1460,14 +1502,10 @@
         $("#sidebarToggle").setAttribute("aria-label", collapsed ? "Expand sidebar" : "Collapse sidebar");
         $("#sidebarToggle").title = collapsed ? "Expand sidebar" : "Collapse sidebar";
         renderPage();
+        checkDueReminders();
       };
       const signOutLocalProfile = async () => {
-        if (!databaseSyncReady) {
-          showToast("OrbitIQ could not confirm your session. You are still signed in.");
-          return;
-        }
         window.clearTimeout(databaseSyncTimer);
-        await databaseSyncQueue;
         try {
           const response = await fetch("/api/auth/logout", {
             method: "POST",
@@ -1545,13 +1583,144 @@
         }
         return upcoming.sort((a, b) => a.date - b.date)[0] || null;
       };
+      const reminderLeadTimes = [
+        { minutes: 24 * 60, label: "1 day" },
+        { minutes: 60, label: "1 hour" },
+        { minutes: 15, label: "15 minutes" }
+      ];
+      const parseLocalDateTime = (date, time) => {
+        if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "") || !/^\d{2}:\d{2}$/.test(time || "")) return null;
+        const [year, month, day] = date.split("-").map(Number);
+        const [hour, minute] = time.split(":").map(Number);
+        const result = new Date(year, month - 1, day, hour, minute);
+        if (result.getFullYear() !== year || result.getMonth() !== month - 1 || result.getDate() !== day || result.getHours() !== hour || result.getMinutes() !== minute) return null;
+        return result;
+      };
+      const upcomingAcademicActivities = (now = new Date()) => {
+        const activities = [];
+        const dayOrder = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
+        for (const [kind, entries] of Object.entries(data.schedules || {})) {
+          if (!Array.isArray(entries)) continue;
+          entries.forEach((entry, index) => {
+            const scheduledDay = dayOrder.indexOf(entry.day);
+            if (scheduledDay < 0) return;
+            const daysUntil = (scheduledDay - (now.getDay() + 6) % 7 + 7) % 7;
+            for (let week = 0; week < 5; week++) {
+              const date = new Date(now.getFullYear(), now.getMonth(), now.getDate() + daysUntil + week * 7);
+              const startAt = parseLocalDateTime(dateKey(date), entry.time);
+              if (!startAt || startAt <= now) continue;
+              activities.push({
+                id: `schedule:${kind}:${entry.id || encodeURIComponent(JSON.stringify([entry.day, entry.time, entry.topic, entry.duration]))}:${dateKey(date)}`,
+                title: entry.teacher ? `${entry.teacher} · ${entry.topic}` : entry.topic,
+                category: kind === "teachers" ? "Teacher session" : kind === "timetable" ? "Class" : "Self study",
+                startAt,
+                timeLabel: entry.time,
+                subject: entry.subject || "",
+                classLevel: entry.classLevel || "",
+                teacher: entry.teacher || "",
+                source: kind
+              });
+            }
+          });
+        }
+        (Array.isArray(data.exams) ? data.exams : []).forEach((exam) => {
+          if (exam.deadline && parseLocalDateTime(exam.deadline, "09:00")) {
+            const deadlineAt = parseLocalDateTime(exam.deadline, "09:00");
+            if (deadlineAt > now) activities.push({
+              id: `deadline:${exam.id}:${exam.deadline}`,
+              title: `Registration deadline · ${exam.name}`,
+              category: "Academic deadline",
+              startAt: deadlineAt,
+              date: exam.deadline,
+              timeLabel: "09:00",
+              subject: exam.subject || "",
+              classLevel: exam.level || "",
+              source: "exams"
+            });
+          }
+          const date = exam.examDate;
+          if (!/^\d{4}-\d{2}-\d{2}$/.test(date || "")) return;
+          if (!parseLocalDateTime(date, "12:00")) return;
+          const startAt = exam.examTime ? parseLocalDateTime(date, exam.examTime) : null;
+          const examDay = new Date(`${date}T00:00:00`);
+          if (Number.isNaN(examDay.valueOf()) || examDay < new Date(now.getFullYear(), now.getMonth(), now.getDate())) return;
+          if (startAt && startAt <= now) return;
+          activities.push({
+            id: `exam:${exam.id}:${date}`,
+            title: exam.name,
+            category: "Exam",
+            startAt,
+            date,
+            timeLabel: exam.examTime || "",
+            subject: exam.subject || "",
+            classLevel: exam.level || "",
+            duration: exam.duration || "",
+            source: "exams"
+          });
+        });
+        (Array.isArray(data.academicEvents) ? data.academicEvents : []).forEach((event) => {
+          const dateOnlyReminder = ["Holiday", "Assignment / deadline"].includes(event.category) && !event.time;
+          const startAt = parseLocalDateTime(event.date, event.time || (dateOnlyReminder ? "09:00" : ""));
+          if (!startAt || startAt <= now) return;
+          activities.push({
+            id: `event:${event.id}`,
+            title: event.title,
+            category: event.category || "Academic activity",
+            startAt,
+            date: event.date,
+            timeLabel: event.time || (dateOnlyReminder ? "09:00" : ""),
+            subject: event.subject || "",
+            classLevel: event.classLevel || "",
+            notes: event.notes || "",
+            source: "reminders"
+          });
+        });
+        return activities
+          .filter((activity) => !activity.startAt || activity.startAt.getTime() - now.getTime() <= 30 * 86_400_000)
+          .sort((a, b) => (a.startAt?.getTime() ?? new Date(`${a.date}T12:00:00`).getTime()) - (b.startAt?.getTime() ?? new Date(`${b.date}T12:00:00`).getTime()));
+      };
+      const checkDueReminders = () => {
+        if (!profile || !Array.isArray(data.sentReminderKeys)) return;
+        const now = Date.now();
+        let changed = false;
+        const sent = new Set(data.sentReminderKeys);
+        for (const activity of upcomingAcademicActivities(new Date(now))) {
+          if (!activity.startAt) continue;
+          for (const lead of reminderLeadTimes) {
+            const reminderAt = activity.startAt.getTime() - lead.minutes * 60_000;
+            if (now < reminderAt || now - reminderAt > 5 * 60_000 || now >= activity.startAt.getTime()) continue;
+            const key = `${activity.id}:${activity.startAt.getTime()}:${lead.minutes}`;
+            if (sent.has(key)) continue;
+            sent.add(key);
+            changed = true;
+            const body = `${activity.title} (${activity.category}) starts in ${lead.label}.${activity.subject ? ` Subject: ${activity.subject}.` : ""}`;
+            showToast(body);
+            if (typeof Notification !== "undefined" && Notification.permission === "granted") {
+              try {
+                const notification = new Notification("OrbitIQ reminder", { body, tag: key });
+                notification.onclick = () => {
+                  window.focus();
+                  setPage("reminders");
+                  notification.close();
+                };
+              } catch (error) {
+                console.error("Could not show an OrbitIQ browser notification.", error);
+              }
+            }
+          }
+        }
+        if (changed) {
+          data.sentReminderKeys = [...sent].slice(-300);
+          persist();
+        }
+      };
       const renderHome = () => {
         const firstName = escapeHTML(profile.name.split(/\s+/)[0]);
         const todayScore = data.lastDaily === todayKey() ? data.dailyScore : null;
         const lastTopic = data.lastTopic
           ? `<span class="tag"><span class="dot"></span> Pick up where you left off</span><h2>Ready to keep exploring, ${firstName}?</h2><p>Your recent topic was <strong>${escapeHTML(data.lastTopic)}</strong>. Turn it into flashcards or ask another question.</p><div class="hero-actions"><button class="btn" data-page="flashcards">Make flashcards <span aria-hidden="true">→</span></button><button class="btn secondary" data-page="doubt">Ask a follow-up</button></div>`
           : `<span class="tag"><span class="dot"></span> Your study space is ready</span><h2>Small steps add up, ${firstName}.</h2><p>Choose a subject, bring a question, or set up a study session. We’ll keep your tools and routine together.</p><div class="hero-actions"><button class="btn" data-page="doubt">Clear a doubt <span aria-hidden="true">→</span></button><button class="btn secondary" data-page="selfstudy">Plan study time</button></div>`;
-        const subjects = ["Mathematics", "Physics", "Chemistry", "Biology", "English", "Computer Science"];
+        const subjects = subjectNames();
         const recentTopics = (Array.isArray(data.studyLog) ? data.studyLog : []).slice().reverse().slice(0, 4);
         const nextSession = nextScheduledItem();
         const nextExam = data.exams.map((exam) => ({ exam, days: examDaysUntil(exam.examDate) }))
@@ -1685,25 +1854,111 @@
         </form></section>
         <section class="card card-pad"><h2 class="section-title">Learning-first help</h2><div class="response-box" style="margin-top:14px"><p>We’ll guide you to identify what’s given, choose a useful method, and try a similar example—without completing the assignment for you.</p><p class="form-note">${demoNotice}</p></div><div id="homeworkResponse"></div></section></div>`;
       const scheduleLabels = { timetable: "Classes & college hours", teachers: "Teacher sessions", selfstudy: "Self-study sessions" };
+      const subjectCategories = [
+        "Humanities", "Social sciences", "Languages", "STEM", "Commerce",
+        "Health and physical education", "Arts", "Engineering and technology",
+        "Law", "Vocational", "Other", "Custom"
+      ];
+      const editingSubject = () => data.subjects.find((subject) => subject.id === editingSubjectId) || null;
+      const renderSubjects = () => {
+        const subject = editingSubject();
+        const grouped = data.subjects.reduce((groups, item) => {
+          const category = item.category || "Custom";
+          (groups[category] ||= []).push(item);
+          return groups;
+        }, {});
+        const catalog = Object.entries(grouped).sort(([a], [b]) => a.localeCompare(b)).map(([category, subjects]) =>
+          `<section class="card card-pad"><div class="section-head"><h2 class="section-title">${escapeHTML(category)}</h2><span class="tag">${subjects.length}</span></div><div class="activity-list">${subjects.map((item) => {
+            const details = [
+              ...(item.boards || []), ...(item.levels || []), ...(item.streams || []),
+              ...(item.semesters || []), ...(item.specializations || [])
+            ];
+            return `<article class="activity-item"><span class="activity-icon">${escapeHTML(icons[item.name] || "∑")}</span><span class="grow" style="min-width:0"><strong>${escapeHTML(item.name)}</strong><small>${details.length ? escapeHTML(details.join(" · ")) : "No board or class details set"}</small></span><button type="button" class="btn ghost small" data-subject-edit="${escapeHTML(item.id)}">Edit</button><button type="button" class="icon-button" data-subject-delete="${escapeHTML(item.id)}" aria-label="Remove ${escapeHTML(item.name)}">×</button></article>`;
+          }).join("")}</div></section>`
+        ).join("");
+        const metadataInput = (key, label, placeholder) =>
+          `<div class="field"><label for="subject-${key}">${label}</label><input id="subject-${key}" name="${key}" maxlength="300" value="${escapeHTML((subject?.[key] || []).join(", "))}" placeholder="${placeholder}"></div>`;
+        return `${pageHeading("Manage the subjects you study.", "Your subject catalog is private to your account. Add any subject, language, stream, or specialization you need.")}
+          <section class="card card-pad" style="margin-bottom:15px"><div class="section-head"><div><h2 class="section-title">${subject ? "Edit subject" : "Add a subject"}</h2><p class="muted" style="margin:6px 0 0;font-size:11px">Optional class and board values can be comma-separated.</p></div></div>
+            <form id="subjectForm" class="exam-form-grid">
+              <div class="field"><label for="subjectName">Subject name</label><input id="subjectName" name="name" maxlength="80" value="${escapeHTML(subject?.name || "")}" placeholder="e.g. Marine Biology" required></div>
+              <div class="field"><label for="subjectCategory">Category</label><input id="subjectCategory" name="category" maxlength="60" list="subjectCategoryOptions" value="${escapeHTML(subject?.category || "Custom")}" placeholder="e.g. Humanities"><datalist id="subjectCategoryOptions">${subjectCategories.map((category) => `<option value="${escapeHTML(category)}">`).join("")}</datalist></div>
+              ${metadataInput("boards", "Boards / institutions", "e.g. CBSE, ICSE, State Board")}
+              ${metadataInput("levels", "Classes / academic levels", "e.g. Class 10, Undergraduate")}
+              ${metadataInput("streams", "Streams", "e.g. Science, Commerce, Arts")}
+              ${metadataInput("semesters", "Semesters / years", "e.g. Semester 1, Year 2")}
+              ${metadataInput("specializations", "Specializations", "e.g. Organic chemistry")}
+              <div class="exam-actions wide"><button class="btn" type="submit">${subject ? "Save subject" : "Add subject"}</button>${subject ? `<button class="btn ghost" type="button" data-subject-cancel>Edit another</button>` : ""}</div>
+            </form>
+          </section>
+          <div class="stack">${catalog || `<div class="empty-card"><strong>No subjects in your catalog</strong><span>Add a subject above to get started.</span></div>`}</div>
+          <p class="muted" style="margin-top:14px;font-size:11px">Removing a subject is blocked while exams or schedules still reference it. Existing accounts receive the expanded starter catalog automatically.</p>`;
+      };
       const renderSchedule = (kind) => {
         const entries = data.schedules[kind] || [];
-        const subjectLabel = kind === "teachers" ? "Teacher & topic" : "Topic";
-        const subjectPlaceholder = kind === "teachers" ? "Teacher — topic" : "e.g. Algebra practice";
+        const subjectLabel = kind === "teachers" ? "Topic / lesson" : "Topic";
+        const subjectPlaceholder = kind === "teachers" ? "e.g. Algebra revision" : "e.g. Algebra practice";
         const headingText = kind === "timetable" ? "Your school or college, at a glance." : kind === "teachers" ? "Keep lessons with teachers in view." : "Make a little space for focused study.";
         const subtitle = kind === "timetable" ? "Add your class hours and what you’ll be studying." : kind === "teachers" ? "Add a teacher, what you’re working on, and when you meet." : "Plan a topic, choose a time, and make it yours.";
-        const rows = entries.length ? entries.map((entry, index) => ({ entry, index })).sort((a, b) => ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].indexOf(a.entry.day) - ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].indexOf(b.entry.day) || a.entry.time.localeCompare(b.entry.time)).map(({ entry, index }) => `<tr><td>${escapeHTML(entry.day)}</td><td>${escapeHTML(entry.time)}${entry.duration ? ` · ${escapeHTML(entry.duration)}` : ""}</td><td>${escapeHTML(entry.topic)}</td><td><button class="icon-button delete-schedule" data-kind="${kind}" data-index="${index}" aria-label="Remove ${escapeHTML(entry.topic)}">×</button></td></tr>`).join("") : "";
+        const rows = entries.length ? entries.map((entry, index) => ({ entry, index })).sort((a, b) => ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].indexOf(a.entry.day) - ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"].indexOf(b.entry.day) || a.entry.time.localeCompare(b.entry.time)).map(({ entry, index }) => `<tr><td>${escapeHTML(entry.day)}</td><td>${escapeHTML(entry.time)}${entry.duration ? ` · ${escapeHTML(entry.duration)}` : ""}</td><td>${escapeHTML(entry.subject || "—")}</td><td>${escapeHTML(entry.teacher ? `${entry.teacher} · ${entry.topic}` : entry.topic)}</td><td>${entry.classLevel ? escapeHTML(entry.classLevel) : "—"}</td><td><button class="icon-button delete-schedule" data-kind="${kind}" data-index="${index}" aria-label="Remove ${escapeHTML(entry.topic)}">×</button></td></tr>`).join("") : "";
         return `${pageHeading(headingText, subtitle)}
           <section class="card card-pad"><div class="section-head"><h2 class="section-title">${scheduleLabels[kind]}</h2><span class="tag">${entries.length} planned</span></div>
             <form class="schedule-form" data-schedule-form="${kind}">
               <div class="field"><label for="day-${kind}">Day</label><select id="day-${kind}" name="day"><option>Monday</option><option>Tuesday</option><option>Wednesday</option><option>Thursday</option><option>Friday</option><option>Saturday</option><option>Sunday</option></select></div>
               <div class="field"><label for="time-${kind}">Start time</label><input id="time-${kind}" name="time" type="time" required></div>
               <div class="field"><label for="topic-${kind}">${subjectLabel}</label><input id="topic-${kind}" name="topic" placeholder="${subjectPlaceholder}" maxlength="100" required></div>
+              <div class="field"><label for="subject-${kind}">Subject</label><select id="subject-${kind}" name="subject">${subjectSelectOptions()}</select></div>
+              ${kind === "teachers" ? `<div class="field"><label for="teacher-${kind}">Teacher</label><input id="teacher-${kind}" name="teacher" maxlength="100" placeholder="Teacher name" required></div>` : ""}
+              <div class="field"><label for="class-${kind}">Class / level</label><input id="class-${kind}" name="classLevel" maxlength="80" value="${escapeHTML(profile.level)}" placeholder="Class or academic level"></div>
               <div class="field"><label for="duration-${kind}">Duration</label><select id="duration-${kind}" name="duration"><option>30 min</option><option selected>1 hour</option><option>1.5 hours</option><option>2 hours</option></select></div>
               <button class="btn" type="submit">Add session</button>
             </form>
           </section>
           <section class="card card-pad" style="margin-top:16px"><div class="section-head"><h2 class="section-title">Your week</h2><span class="muted" style="font-size:11px">Times shown in your local time</span></div>
-            ${rows ? `<div style="overflow-x:auto"><table class="schedule-table"><thead><tr><th>Day</th><th>Time</th><th>${subjectLabel}</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty-state">Nothing planned yet. Add a session above to start shaping your week.</div>`}
+            ${rows ? `<div style="overflow-x:auto"><table class="schedule-table"><thead><tr><th>Day</th><th>Time</th><th>Subject</th><th>${kind === "teachers" ? "Teacher / topic" : subjectLabel}</th><th>Class / level</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>` : `<div class="empty-state">Nothing planned yet. Add a session above to start shaping your week.</div>`}
+          </section>`;
+      };
+      const renderReminders = () => {
+        const activities = upcomingAcademicActivities();
+        const notificationSupported = typeof Notification !== "undefined";
+        const permission = notificationSupported ? Notification.permission : "unsupported";
+        const notificationStatus = permission === "granted"
+          ? `<span class="tag">Browser notifications enabled</span>`
+          : permission === "denied"
+            ? `<p class="muted" style="font-size:12px">Browser notifications are blocked for this site. Change the site permission in your browser settings to enable them. In-app reminders still work while OrbitIQ is open.</p>`
+            : permission === "unsupported"
+              ? `<p class="muted" style="font-size:12px">This browser does not support notifications. In-app reminders still work while OrbitIQ is open.</p>`
+              : `<button type="button" class="btn secondary small" id="enableNotifications">Enable browser notifications</button>`;
+        const rows = activities.length
+          ? `<div class="activity-list">${activities.map((activity) => {
+            const date = activity.startAt || new Date(`${activity.date}T12:00:00`);
+            const when = activity.startAt
+              ? date.toLocaleString(undefined, { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+              : `${date.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })} · Time not entered`;
+            const timeNote = activity.category === "Exam" && !activity.startAt
+              ? `<small>Add an exam time in Exam center to schedule alerts.</small>`
+              : "";
+            const context = [activity.subject, activity.classLevel, activity.duration, activity.notes].filter(Boolean).join(" · ");
+            const removeButton = activity.source === "reminders"
+              ? `<button type="button" class="icon-button" data-academic-event-delete="${escapeHTML(activity.id.slice("event:".length))}" aria-label="Remove ${escapeHTML(activity.title)}">×</button>`
+              : "";
+            return `<div class="activity-item"><span class="activity-icon">◷</span><span class="grow" style="min-width:0"><strong>${escapeHTML(activity.title)}</strong><small>${escapeHTML(activity.category)} · ${escapeHTML(when)}</small>${context ? `<small>${escapeHTML(context)}</small>` : ""}${timeNote}</span>${removeButton}</div>`;
+          }).join("")}</div>`
+          : `<div class="empty-card"><strong>No upcoming activities yet</strong><span>Add a class or teacher session to your weekly schedule, an exam in Exam center, or an academic activity here.</span></div>`;
+        return `${pageHeading("Stay on top of what’s coming up.", "Reminders are scheduled 1 day, 1 hour, and 15 minutes before timed activities.") }
+          <section class="card card-pad" style="margin-bottom:15px"><div class="section-head"><div><h2 class="section-title">Notifications</h2><p class="muted" style="margin:6px 0 0;font-size:11px">Browser alerts require permission. OrbitIQ must remain open for reminders to run.</p></div>${permission === "granted" ? notificationStatus : ""}</div>${permission === "granted" ? "" : notificationStatus}</section>
+          <section class="card card-pad" style="margin-bottom:15px"><div class="section-head"><div><h2 class="section-title">Upcoming activities</h2><p class="muted" style="margin:6px 0 0;font-size:11px">Showing the next 30 days in your local time.</p></div></div>${rows}</section>
+          <section class="card card-pad"><div class="section-head"><div><h2 class="section-title">Add an academic activity</h2><p class="muted" style="margin:6px 0 0;font-size:11px">Add tuition, a one-time class, assignment deadline, or another timed event.</p></div></div>
+            <form id="academicEventForm" class="schedule-form">
+              <div class="field"><label for="academicEventCategory">Activity type</label><select id="academicEventCategory" name="category"><option>Tuition / class</option><option>Assignment / deadline</option><option>Academic event</option><option>Holiday</option><option>Other</option></select></div>
+              <div class="field"><label for="academicEventTitle">Activity</label><input id="academicEventTitle" name="title" maxlength="120" placeholder="e.g. Chemistry tuition" required></div>
+              <div class="field"><label for="academicEventDate">Date</label><input id="academicEventDate" name="date" type="date" min="${todayKey()}" required></div>
+              <div class="field"><label for="academicEventTime">Time (optional for holidays/deadlines)</label><input id="academicEventTime" name="time" type="time"></div>
+              <div class="field"><label for="academicEventSubject">Subject (optional)</label><select id="academicEventSubject" name="subject"><option value="">No subject</option>${subjectSelectOptions("")}</select></div>
+              <div class="field"><label for="academicEventClass">Class / level (optional)</label><input id="academicEventClass" name="classLevel" maxlength="80" placeholder="Class or academic level"></div>
+              <div class="field wide"><label for="academicEventNotes">Notes (optional)</label><input id="academicEventNotes" name="notes" maxlength="300" placeholder="Room, preparation notes, or link"></div>
+              <button class="btn" type="submit">Add activity</button>
+            </form>
           </section>`;
       };
       const renderDaily = () => {
@@ -1840,10 +2095,10 @@
           return `<article class="card exam-card">
             <div class="exam-card-top"><div><span class="eyebrow">${escapeHTML(exam.category)}</span><h3>${escapeHTML(exam.name)}</h3><p>${escapeHTML([exam.level, exam.board, exam.subject].filter(Boolean).join(" · ") || "Personal exam tracker")}</p></div><span class="exam-badge ${exam.verified ? "verified" : "warn"}">${exam.verified ? "Source checked" : "Unverified"}</span></div>
             <div class="exam-meta"><span class="exam-badge">${escapeHTML(examCountdown)}</span><span class="exam-badge ${deadlineDays != null && deadlineDays >= 0 && deadlineDays <= 30 ? "warn" : ""}">${escapeHTML(deadlineTag)}</span>${String(exam.level || "").trim().toLowerCase() === String(profile.level || "").trim().toLowerCase() ? `<span class="exam-badge">Profile level match · verify eligibility</span>` : ""}</div>
-            <p>Organizer: ${escapeHTML(exam.organizer || "Not Available")} · Exam date: ${escapeHTML(examDateLabel(exam.examDate, "Not Announced"))}</p>
+            <p>Subject: ${escapeHTML(exam.subject || "Not assigned")}${exam.duration ? ` · Duration: ${escapeHTML(exam.duration)}` : ""} · Organizer: ${escapeHTML(exam.organizer || "Not Available")} · Exam date: ${escapeHTML(examDateLabel(exam.examDate, "Not Announced"))}${exam.examTime ? ` at ${escapeHTML(exam.examTime)}` : ""}</p>
             <p>Registration deadline: ${escapeHTML(examDateLabel(exam.deadline, "Not Announced"))}${exam.verifiedAt ? ` · Checked ${escapeHTML(exam.verifiedAt)}` : ""}</p>
             <div style="margin-top:9px">${source}</div>
-            ${exam.topics ? `<p class="exam-topics"><strong>Topics / syllabus notes:</strong> ${escapeHTML(exam.topics).replace(/\n/g, ", ")}</p>` : `<p class="exam-topics">Syllabus: Not Available. Add topics from the official syllabus when known.</p>`}
+            ${exam.syllabus ? `<p class="exam-topics"><strong>Syllabus:</strong> ${escapeHTML(exam.syllabus).replace(/\n/g, ", ")}</p>` : exam.topics ? `<p class="exam-topics"><strong>Topics / syllabus notes:</strong> ${escapeHTML(exam.topics).replace(/\n/g, ", ")}</p>` : `<p class="exam-topics">Syllabus: Not Available. Add details from the official syllabus when known.</p>`}
             ${progress ? `<p class="exam-topics"><strong>Practice:</strong> ${progress.attempts} quiz${progress.attempts === 1 ? "" : "zes"} · best score ${progress.bestScore}/5 · last tried ${escapeHTML(progress.lastDate)}</p>` : ""}
             <div class="exam-actions">
               <button type="button" class="btn small" data-exam-practice="${escapeHTML(exam.id)}">Create 5-question practice quiz</button>
@@ -1861,7 +2116,7 @@
         const exam = editingExam();
         const dateInput = (id, label, value) => `<div class="field"><label for="${id}">${label}</label><input type="date" id="${id}" name="${id}" value="${escapeHTML(value || "")}"></div>`;
         const categoryOptions = examCategories.map((category) => `<option ${exam?.category === category ? "selected" : ""}>${escapeHTML(category)}</option>`).join("");
-        const subjectOptionsMarkup = subjectOptions.map((subject) => `<option ${((exam?.subject || selectedSubject()) === subject) ? "selected" : ""}>${escapeHTML(subject)}</option>`).join("");
+        const subjectOptionsMarkup = subjectSelectOptions(exam?.subject || selectedSubject());
         const savedExams = data.exams.filter((item) => item.saved).length;
         const upcomingExams = data.exams.filter((item) => {
           const days = examDaysUntil(item.examDate);
@@ -1887,9 +2142,12 @@
                 <div class="field"><label for="examSubject">Subject</label><select id="examSubject" name="subject">${subjectOptionsMarkup}</select></div>
                 <div class="field"><label for="examOrganizer">Organizer / school</label><input id="examOrganizer" name="organizer" value="${escapeHTML(exam?.organizer || "")}" maxlength="120" placeholder="Optional"></div>
                 ${dateInput("examDate", "Examination date", exam?.examDate)}
+                <div class="field"><label for="examTime">Examination time (required for timed reminders)</label><input type="time" id="examTime" name="examTime" value="${escapeHTML(exam?.examTime || "")}"></div>
                 ${dateInput("examDeadline", "Registration deadline", exam?.deadline)}
+                <div class="field"><label for="examDuration">Duration</label><input id="examDuration" name="duration" maxlength="40" value="${escapeHTML(exam?.duration || "")}" placeholder="e.g. 2 hours"></div>
                 <div class="field wide"><label for="examSource">Official information URL</label><input type="url" id="examSource" name="sourceUrl" value="${escapeHTML(exam?.sourceUrl || "")}" maxlength="500" placeholder="https://..."><small class="muted">Add the official announcement or organizer page. Dates are never filled in automatically.</small></div>
-                <div class="field wide"><label for="examTopics">Syllabus / topics</label><textarea id="examTopics" name="topics" maxlength="2500" placeholder="Add verified syllabus topics, separated by commas or new lines">${escapeHTML(exam?.topics || "")}</textarea></div>
+                <div class="field wide"><label for="examSyllabus">Syllabus</label><textarea id="examSyllabus" name="syllabus" maxlength="4000" placeholder="Add syllabus details verified against the official source">${escapeHTML(exam?.syllabus || exam?.topics || "")}</textarea></div>
+                <div class="field wide"><label for="examTopics">Topics / revision notes (optional)</label><textarea id="examTopics" name="topics" maxlength="2500" placeholder="Topics for the practice quiz">${escapeHTML(exam?.topics || "")}</textarea></div>
                 <label class="exam-plan-item wide"><input type="checkbox" name="verified" ${exam?.verified ? "checked" : ""}><span>I checked these details against the official source above. OrbitIQ does not independently verify them.</span></label>
                 <div class="exam-actions wide"><button class="btn" type="submit">${exam ? "Save exam changes" : "Add to my exams"}</button>${exam ? `<button class="btn ghost" type="button" data-exam-cancel-edit>Cancel</button>` : ""}</div>
               </form>
@@ -2045,7 +2303,8 @@
           home: renderHome, doubt: renderDoubt, flashcards: renderFlashcards, quiz: renderQuiz,
           facts: renderFacts, analyze: renderAnalyze, homework: renderHomework,
           timetable: () => renderSchedule("timetable"), teachers: () => renderSchedule("teachers"),
-          selfstudy: () => renderSchedule("selfstudy"), daily: renderDaily, exams: renderExams, career: renderCareer
+          selfstudy: () => renderSchedule("selfstudy"), daily: renderDaily, exams: renderExams,
+          reminders: renderReminders, subjects: renderSubjects, career: renderCareer
         }[currentPage];
         const container = $("#pageContent");
         container.innerHTML = page();
@@ -2086,7 +2345,7 @@
         renderPage();
       };
 
-      $("#welcomeForm").addEventListener("submit", (event) => {
+      $("#welcomeForm").addEventListener("submit", async (event) => {
         event.preventDefault();
         clearAuthMessages();
         const form = new FormData(event.currentTarget);
@@ -2102,12 +2361,43 @@
             showToast("Please enter your name and an age between 5 and 120.");
             return;
           }
-          profile = nextProfile;
-          editingProfile = false;
-          persist();
-          $("#welcomeScreen").classList.add("hidden");
-          $("#appShell").classList.remove("hidden");
-          enterApp();
+          const submitButton = $("#authSubmit");
+          submitButton.disabled = true;
+          displayAuthMessage("#authMessage", "Saving your profile…");
+          window.clearTimeout(databaseSyncTimer);
+          try {
+            await databaseSyncQueue;
+            const response = await fetch("/api/data", {
+              method: "PUT",
+              headers: { "content-type": "application/json" },
+              credentials: "same-origin",
+              body: JSON.stringify({ profile: nextProfile, data })
+            });
+            const result = await readApiResponse(response);
+            if (response.status === 401) {
+              showSignedOutScreen();
+              showToast("Your session expired. Sign in again to continue.");
+              return;
+            }
+            if (!response.ok) throw new Error(result.error || `Profile save failed (HTTP ${response.status}).`);
+            profile = nextProfile;
+            try {
+              localStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+              localStorage.setItem(DATA_KEY, JSON.stringify(data));
+            } catch (error) {
+              console.error("Could not cache the updated OrbitIQ profile.", error);
+            }
+            editingProfile = false;
+            $("#welcomeScreen").classList.add("hidden");
+            $("#appShell").classList.remove("hidden");
+            enterApp();
+            showToast("Your profile has been updated.");
+          } catch (error) {
+            console.error("Could not update the OrbitIQ profile.", error);
+            displayAuthMessage("#authMessage", error.message || "Could not save your profile. Please try again.", true);
+          } finally {
+            submitButton.disabled = false;
+          }
           return;
         }
         const email = String(form.get("email") || "").trim();
@@ -2185,6 +2475,73 @@
       });
       document.addEventListener("click", async (event) => {
         if (!event.target.closest(".nav-search-wrap")) closeSearch();
+        const subjectEditButton = event.target.closest("[data-subject-edit]");
+        if (subjectEditButton) {
+          editingSubjectId = subjectEditButton.dataset.subjectEdit;
+          renderPage();
+          $("#subjectName").focus();
+          return;
+        }
+        if (event.target.closest("[data-subject-cancel]")) {
+          editingSubjectId = "";
+          renderPage();
+          return;
+        }
+        const subjectDeleteButton = event.target.closest("[data-subject-delete]");
+        if (subjectDeleteButton) {
+          const subject = data.subjects.find((item) => item.id === subjectDeleteButton.dataset.subjectDelete);
+          if (!subject) return;
+          if (data.subjects.length === 1) {
+            showToast("Keep at least one subject in your catalog.");
+            return;
+          }
+          const referenced = [...data.exams, ...Object.values(data.schedules).flat()]
+            .some((item) => item.subject === subject.name);
+          if (referenced) {
+            showToast("Reassign or remove this subject from its exams and schedules before deleting it.");
+            return;
+          }
+          confirmAction("Remove this subject?", `${subject.name} will be removed from your personal subject catalog.`, "Remove subject", () => {
+            data.subjects = data.subjects.filter((item) => item.id !== subject.id);
+            if (data.subject === subject.name) data.subject = subjectNames()[0] || "";
+            if (editingSubjectId === subject.id) editingSubjectId = "";
+            persist();
+            enterApp();
+            showToast("Subject removed from your catalog.");
+          });
+          return;
+        }
+        if (event.target.closest("#enableNotifications")) {
+          if (typeof Notification === "undefined") {
+            showToast("Browser notifications are not supported here. In-app reminders still work.");
+            return;
+          }
+          try {
+            const permission = await Notification.requestPermission();
+            renderPage();
+            if (permission === "granted") {
+              showToast("Browser notifications are enabled.");
+              checkDueReminders();
+            } else {
+              showToast("Notification permission was not granted. In-app reminders still work while OrbitIQ is open.");
+            }
+          } catch (error) {
+            console.error("Could not request browser notification permission.", error);
+            showToast("Could not enable browser notifications. Check your browser settings.");
+          }
+          return;
+        }
+        const deleteAcademicEvent = event.target.closest("[data-academic-event-delete]");
+        if (deleteAcademicEvent) {
+          const eventId = deleteAcademicEvent.dataset.academicEventDelete;
+          confirmAction("Remove this activity?", "Its scheduled reminders will also be removed.", "Remove activity", () => {
+            data.academicEvents = data.academicEvents.filter((item) => item.id !== eventId);
+            persist();
+            renderPage();
+            showToast("Academic activity removed.");
+          });
+          return;
+        }
         const recentTopicButton = event.target.closest("[data-open-topic]");
         if (recentTopicButton) {
           topicToAsk = recentTopicButton.dataset.openTopic;
@@ -2244,7 +2601,7 @@
         if (examPracticeButton) {
           const exam = data.exams.find((item) => item.id === examPracticeButton.dataset.examPractice);
           if (!exam) return;
-          const subject = subjectOptions.includes(exam.subject) ? exam.subject : selectedSubject();
+          const subject = subjectNames().includes(exam.subject) ? exam.subject : selectedSubject();
           const topic = `${exam.name}${exam.topics ? `: ${exam.topics.replace(/\n/g, ", ")}` : ""}`.slice(0, 180);
           await runAI(examPracticeButton, null, "Preparing mock quiz…", async () => {
             $("#subjectSelect").value = subject;
@@ -2529,6 +2886,7 @@
           const name = String(values.get("name") || "").trim();
           const examDate = String(values.get("examDate") || "");
           const deadline = String(values.get("examDeadline") || "");
+          const examTime = String(values.get("examTime") || "");
           const sourceUrl = String(values.get("sourceUrl") || "").trim();
           const verified = values.has("verified");
           if (deadline && examDate && deadline > examDate) {
@@ -2564,11 +2922,14 @@
             level: String(values.get("level") || profile.level).trim(),
             board: String(values.get("board") || "").trim(),
             subject: String(values.get("subject") || selectedSubject()),
+            duration: String(values.get("duration") || "").trim(),
             organizer: String(values.get("organizer") || "").trim(),
             examDate,
+            examTime,
             deadline,
             sourceUrl,
             topics: String(values.get("topics") || "").trim(),
+            syllabus: String(values.get("syllabus") || "").trim(),
             verified,
             verifiedAt: verified ? todayKey() : "",
             saved: existing?.saved || false
@@ -2597,11 +2958,84 @@
           const topic = String(formData.get("topic") || "").trim();
           const time = String(formData.get("time") || "");
           if (!topic || !time) { showToast("Add a topic and start time to save your session."); return; }
-          data.schedules[kind].push({ day: String(formData.get("day")), time, duration: String(formData.get("duration")), topic });
+          data.schedules[kind].push({
+            id: crypto.randomUUID ? crypto.randomUUID() : `schedule-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            day: String(formData.get("day")),
+            time,
+            duration: String(formData.get("duration")),
+            topic,
+            subject: String(formData.get("subject") || selectedSubject()),
+            teacher: String(formData.get("teacher") || "").trim(),
+            classLevel: String(formData.get("classLevel") || "").trim()
+          });
           persist();
           if (kind === "selfstudy") recordTopic(topic);
           renderPage();
           showToast("Session added to your weekly plan.");
+          return;
+        }
+        if (form.id === "subjectForm") {
+          const values = new FormData(form);
+          const name = String(values.get("name") || "").trim();
+          if (!name) { showToast("Enter a subject name."); return; }
+          const existing = editingSubject();
+          if (data.subjects.some((item) => item.id !== existing?.id && item.name.toLowerCase() === name.toLowerCase())) {
+            showToast("That subject is already in your catalog.");
+            $("#subjectName").focus();
+            return;
+          }
+          const subject = {
+            id: existing?.id || (crypto.randomUUID ? crypto.randomUUID() : `subject-${Date.now()}-${Math.random().toString(36).slice(2)}`),
+            name,
+            category: String(values.get("category") || "Custom"),
+            boards: splitMetadata(values.get("boards")),
+            levels: splitMetadata(values.get("levels")),
+            streams: splitMetadata(values.get("streams")),
+            semesters: splitMetadata(values.get("semesters")),
+            specializations: splitMetadata(values.get("specializations"))
+          };
+          if (existing) {
+            const oldName = existing.name;
+            data.subjects = data.subjects.map((item) => item.id === existing.id ? subject : item);
+            if (data.subject === oldName) data.subject = name;
+            if (data.lastStudied === oldName) data.lastStudied = name;
+            data.studyLog.forEach((entry) => { if (entry.subject === oldName) entry.subject = name; });
+            data.exams.forEach((exam) => { if (exam.subject === oldName) exam.subject = name; });
+            Object.values(data.schedules).flat().forEach((entry) => { if (entry.subject === oldName) entry.subject = name; });
+          } else {
+            data.subjects.push(subject);
+          }
+          editingSubjectId = "";
+          persist();
+          enterApp();
+          showToast(existing ? "Subject updated." : "Subject added to your catalog.");
+          return;
+        }
+        if (form.id === "academicEventForm") {
+          const values = new FormData(form);
+          const title = String(values.get("title") || "").trim();
+          const date = String(values.get("date") || "");
+          const time = String(values.get("time") || "");
+          const category = String(values.get("category") || "Academic activity");
+          const dateOnlyReminder = ["Holiday", "Assignment / deadline"].includes(category) && !time;
+          const startAt = parseLocalDateTime(date, time || (dateOnlyReminder ? "09:00" : ""));
+          if (!title || !startAt || startAt <= new Date()) {
+            showToast("Enter an activity name, a future date, and a time (except for holidays or deadlines).");
+            return;
+          }
+          data.academicEvents.push({
+            id: crypto.randomUUID ? crypto.randomUUID() : `activity-${Date.now()}-${Math.random().toString(36).slice(2)}`,
+            title,
+            category,
+            date,
+            time,
+            subject: String(values.get("subject") || ""),
+            classLevel: String(values.get("classLevel") || "").trim(),
+            notes: String(values.get("notes") || "").trim()
+          });
+          persist();
+          renderPage();
+          showToast("Academic activity added. Reminders are set.");
           return;
         }
         if (form.id === "dailyAnswerForm") {
@@ -2670,9 +3104,43 @@
           schedules: { ...defaultData.schedules, ...(savedData.schedules || {}) },
           exams: Array.isArray(savedData.exams) ? savedData.exams : [],
           examPlans: savedData.examPlans && typeof savedData.examPlans === "object" ? savedData.examPlans : {},
-          examProgress: savedData.examProgress && typeof savedData.examProgress === "object" ? savedData.examProgress : {}
+          examProgress: savedData.examProgress && typeof savedData.examProgress === "object" ? savedData.examProgress : {},
+          academicEvents: Array.isArray(savedData.academicEvents) ? savedData.academicEvents : [],
+          sentReminderKeys: Array.isArray(savedData.sentReminderKeys) ? savedData.sentReminderKeys : []
         };
-        if (!subjectOptions.includes(data.subject)) data.subject = defaultData.subject;
+        const savedSubjects = Array.isArray(savedData.subjects) ? savedData.subjects : createDefaultSubjects();
+        data.subjects = savedSubjects.map((item) => {
+          const subject = typeof item === "string" ? { name: item } : item;
+          if (!subject || typeof subject.name !== "string" || !subject.name.trim()) return null;
+          const name = subject.name.trim();
+          return {
+            id: typeof subject.id === "string" && subject.id ? subject.id : `subject-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+            name,
+            category: typeof subject.category === "string" && subject.category ? subject.category : subjectCategory(name),
+            boards: Array.isArray(subject.boards) ? subject.boards : [],
+            levels: Array.isArray(subject.levels) ? subject.levels : [],
+            streams: Array.isArray(subject.streams) ? subject.streams : [],
+            semesters: Array.isArray(subject.semesters) ? subject.semesters : [],
+            specializations: Array.isArray(subject.specializations) ? subject.specializations : []
+          };
+        }).filter(Boolean);
+        const knownSubjectNames = new Set(data.subjects.map((subject) => subject.name.toLowerCase()));
+        const legacySubjectNames = [
+          savedData.subject,
+          ...(Array.isArray(savedData.exams) ? savedData.exams.map((exam) => exam.subject) : []),
+          ...Object.values(data.schedules).flat().map((entry) => entry.subject)
+        ].filter((name) => typeof name === "string" && name.trim());
+        for (const name of legacySubjectNames) {
+          if (knownSubjectNames.has(name.trim().toLowerCase())) continue;
+          data.subjects.push({
+            id: `subject-legacy-${name.toLowerCase().replace(/[^a-z0-9]+/g, "-")}`,
+            name: name.trim(),
+            category: subjectCategory(name.trim()),
+            boards: [], levels: [], streams: [], semesters: [], specializations: []
+          });
+          knownSubjectNames.add(name.trim().toLowerCase());
+        }
+        if (!subjectNames().includes(data.subject)) data.subject = subjectNames()[0] || "";
         ["timetable", "teachers", "selfstudy"].forEach((key) => { if (!Array.isArray(data.schedules[key])) data.schedules[key] = []; });
         if (!Array.isArray(data.studyLog)) data.studyLog = [];
         if (!Array.isArray(data.dailyHistory)) data.dailyHistory = [];
@@ -2730,9 +3198,13 @@
         }
       });
       document.addEventListener("visibilitychange", () => {
-        if (document.visibilityState === "visible") void validateCurrentSession();
+        if (document.visibilityState === "visible") {
+          void validateCurrentSession();
+          checkDueReminders();
+        }
       });
       window.setInterval(() => void validateCurrentSession(), 60_000);
+      window.setInterval(checkDueReminders, 30_000);
       refreshAIStatus();
     })();
   </script>
