@@ -88,3 +88,4 @@ The Exam Center does not yet collect live announcements, verify eligibility, sen
 ## New Next.js foundation
 
 The replacement application is being developed separately in [`web/`](./web/README.md). The email account flow applies to the existing Node.js browser app, not the separate Next.js foundation.
+<img width="2864" height="1780" alt="image" src="https://github.com/user-attachments/assets/80b1a2f3-32d7-4c5d-88fb-e5ede1fd8c22" />
